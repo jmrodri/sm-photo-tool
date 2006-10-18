@@ -39,5 +39,5 @@ rm -rf %{buildroot}
 %{_usr}/share/doc/%{name}-%{version}/smugmugrc
 
 %changelog
-* Sat Apr  1 2006 Jesus Rodriguez <jesusr@redhat.com> 1.10-1
+* Sat Apr  1 2006 Jesus Rodriguez <jmrodri at gmail dot com> 1.10-1
 - initial rpm release
