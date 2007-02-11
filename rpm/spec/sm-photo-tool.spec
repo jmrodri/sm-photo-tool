@@ -4,7 +4,7 @@ Release:        1
 Summary:        Smugmug client
 Group:          Applications/Multimedia
 License:        GPL
-URL:            http://code.google.com/p/sm-photo-tool/
+URL:            http://sm-photo-tool.sourceforge.net/
 Source0:        %{name}-%{version}.tar.gz
 Patch0:         %{name}-1.10-license.patch
 BuildRoot:      %{_tmppath}/%{name}-root-%(%{__id_u} -n)
