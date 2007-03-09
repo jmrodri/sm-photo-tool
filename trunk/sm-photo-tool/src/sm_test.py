@@ -4,6 +4,10 @@ import sys
 import sm_photo_tool
 from sm_photo_tool import *
 
+class TestOptions(unittest.TestCase):
+    def testInit(self):
+        Options([])
+    
 class TestSmPhotoTool(unittest.TestCase):
     def testToBool(self):
         self.assertTrue(sm_photo_tool.to_bool("true"))
