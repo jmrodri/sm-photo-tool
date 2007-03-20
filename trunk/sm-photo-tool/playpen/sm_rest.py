@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import urllib
+import httplib, urllib
 from xml import xpath
 from xml.dom.minidom import parseString
 from time import time
@@ -21,16 +21,29 @@ def getText(nodelist):
     
 class Image:
     def __init__(self):
-        self.id = 10
+        self.data = {}
+        
+    def __setitem__(self, key, value):
+        #print "__setitem__(%s:%s)" % (key,value)
+        self.data[key.lower()] = value
+    def __getitem__(self, key):
+        #print "__getitem__(%s)" % (key)
+        return self.data[key.lower()]
+    def __str__(self):
+        return str(self.data)
 
 class Album:
-    def __init__(self, id, title, category, categoryid, subcategory='', subcategoryid=''):
-        self.id = id
-        self.title = title
-        self.category = category
-        self.categoryid = categoryid
-        self.subcategory = subcategory
-        self.subcategoryid = subcategoryid
+    def __init__(self):
+        self.data = {}
+        
+    def __setitem__(self, key, value):
+        #print "__setitem__(%s:%s)" % (key,value)
+        self.data[key.lower()] = value
+    def __getitem__(self, key):
+        #print "__getitem__(%s)" % (key)
+        return self.data[key.lower()]
+    def __str__(self):
+        return str(self.data)
 
 class _Method:
     # some magic to bind an XML-RPC method to an RPC server.
@@ -81,59 +94,33 @@ class SmREST:
     def createObject(self, nodeList):
         print "createObj: " + str(dir(nodeList))
         node = nodeList[0]
-        print dir(node)
-        print node.nodeName
+        print "Creating class of type: " + str(node.nodeName)
         clazz = eval(node.nodeName)
         obj = clazz()
-        
-        """
-        need to process attributes of the tag
-        for each child node, get any attributes, then data
-        interface Node {
-  // NodeType
-  const unsigned short      ELEMENT_NODE       = 1;
-  const unsigned short      ATTRIBUTE_NODE     = 2;
-  const unsigned short      TEXT_NODE          = 3;
-  const unsigned short      CDATA_SECTION_NODE = 4;
-  const unsigned short      ENTITY_REFERENCE_NODE = 5;
-  const unsigned short      ENTITY_NODE        = 6;
-  const unsigned short      PROCESSING_INSTRUCTION_NODE = 7;
-  const unsigned short      COMMENT_NODE       = 8;
-  const unsigned short      DOCUMENT_NODE      = 9;
-  const unsigned short      DOCUMENT_TYPE_NODE = 10;
-  const unsigned short      DOCUMENT_FRAGMENT_NODE = 11;
-  const unsigned short      NOTATION_NODE      = 12;
-
-  readonly attribute  DOMString            nodeName;
-           attribute  DOMString            nodeValue;
-                                                 // raises(DOMException) on setting
-                                                 // raises(DOMException) on retrieval
-  readonly attribute  unsigned short       nodeType;
-  readonly attribute  Node                 parentNode;
-  readonly attribute  NodeList             childNodes;
-  readonly attribute  Node                 firstChild;
-  readonly attribute  Node                 lastChild;
-  readonly attribute  Node                 previousSibling;
-  readonly attribute  Node                 nextSibling;
-  readonly attribute  NamedNodeMap         attributes;
-  readonly attribute  Document             ownerDocument;
-  Node                      insertBefore(in Node newChild, 
-                                         in Node refChild)
-                                         raises(DOMException);
-  Node                      replaceChild(in Node newChild, 
-                                         in Node oldChild)
-                                         raises(DOMException);
-  Node                      removeChild(in Node oldChild)
-                                        raises(DOMException);
-  Node                      appendChild(in Node newChild)
-                                        raises(DOMException);
-  boolean                   hasChildNodes();
-  Node                      cloneNode(in boolean deep);
-};
-        """
-        print node.attributes
+       
+        # gather the attributes of the node
+        self.__processAttributes(obj, node.tagName, node.attributes)
+        self.__processNodes(obj, node.childNodes)
+            
         return obj
         
+    def __processNodes(self, obj, nodes):
+        for n in nodes:
+            if n.nodeType == n.TEXT_NODE:
+                obj[n.parentNode.tagName] = n.data
+            elif n.nodeType == n.ELEMENT_NODE:
+                #print n.tagName
+                if n.hasAttributes:
+                    self.__processAttributes(obj, n.tagName, n.attributes)
+                if n.hasChildNodes:
+                    self.__processNodes(obj, n.childNodes)
+                        
+    def __processAttributes(self, obj, tagName, attributes):
+        for i in range(attributes.length):
+            attr = attributes.item(i)
+            #print str(attr.name) + " " + str(attr.value)
+            obj[tagName + attr.name] = attr.value
+            
 class Smugmug:
     def __init__(self):
         self.sm = SmREST()
@@ -154,7 +141,7 @@ class Smugmug:
         rsp = self.sm.smugmug.images.getInfo(SessionID=sessionid,ImageID=imageId)
         # should return an Image object
         rsp = self.sm.findValue(rsp, "rsp/Info/Image")
-        print rsp[0]
+        #print rsp[0]
         return self.sm.createObject(rsp)
         
     def getImages(self, sessionid, albumId):
@@ -169,23 +156,38 @@ class Smugmug:
             imageids.append(id.value)
         return imageids
     
+    def getAlbumInfo(self, sessionid, albumId):
+        rsp = self.sm.smugmug.albums.getInfo(SessionID=sessionid,AlbumID=albumId)
+        rsp = self.sm.findValue(rsp, "rsp/Albums/Album")
+        return self.sm.createObject(rsp)
+        
 if __name__ == "__main__":
     # 1.1.1
     #sm = SmREST()
 
     sm1 = Smugmug()
-    sessionid = sm1.loginWithPassword("jmrodri@gmail.com", "*****")
+    sessionid = sm1.loginWithPassword("jmrodri@gmail.com", "****")
     print "Smugmug returned: " + str(sessionid)
+    
+    print "getalbuminfo"
+    albuminfo = sm1.getAlbumInfo(sessionid, 2559293)
+    print "albuminfo: " + str(albuminfo)
+    if albuminfo['public']:
+        print "this album is public"
+
     
     print "getimages"
     images = sm1.getImages(sessionid, 2559293)
     print "images: " + str(images)
     
-    print "getimageinfo"
+    print "getimageinfo ---------------------------------------"
     imgInfo = sm1.getImageInfo(sessionid, images[0])
     print "imageinfo: " + str(imgInfo)
+    print "TinyURL = " + imgInfo['TinyURL']
+    print "imageid = " + imgInfo['imageid']
+    print "albumId = " + imgInfo['albumId']
     
-    print "logout"
+    print "logout -------------------------------------------"
     rc = sm1.logout(sessionid)
     print "logout returned: " + str(rc)
     
@@ -204,12 +206,27 @@ if __name__ == "__main__":
     albumid = rsp[0].value
     print albumid
     
-    print "getinfo"
-    rsp = sm.smugmug.albums.getInfo(SessionID=sessionid,AlbumID=albumid)
-    rsp = sm.findValue(rsp, "rsp/Albums/Album")
-    # should build an Album objects
-    print rsp[0]
+
+   
+    print "upload"
+    f = open("test.jpg")
     
+    headers = {
+        "Content-Length":,
+        "Content-MD5":,
+        "X-Smug-SessionID":sessionid,
+        "X-Smug-Version":'1.1.1',
+        "X-Smug-ResponseType": 'REST',
+        "X-Smug-AlbumID": albumid,
+        "X-Smug-FileName": "foo.jpg"
+    filename = "photo.jpg"
+    conn = httplib.HTTPConnection("http://upload.smugmug.com/")
+    conn.request("PUT", filename, {}, headers)
+    response = conn.getresponse()
+    print response.status, response.reason
+    data = response.read()
+    print data
+    conn.close()
     print "delete"
     rsp = sm.smugmug.albums.delete(SessionID=sessionid,AlbumID=albumid)
     rsp = sm.findValue(rsp, "rsp/Delete/Album/Successful");
@@ -222,9 +239,5 @@ if __name__ == "__main__":
     # should return array of ids
     print "count: " + str(len(rsp))
     print rsp[0].value
-
-
-    
-
     """
 
