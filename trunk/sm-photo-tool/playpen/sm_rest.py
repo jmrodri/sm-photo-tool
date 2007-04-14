@@ -252,7 +252,7 @@ if __name__ == "__main__":
     #sm = SmREST()
 
     sm1 = Smugmug()
-    sessionid = sm1.loginWithPassword("jmrodri@gmail.com", "Wakt$iaS")
+    sessionid = sm1.loginWithPassword("jmrodri@gmail.com", "****")
     print "Smugmug returned: " + str(sessionid)
     
     print "createalbum"
