@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import httplib, urllib
+import md5
 from xml import xpath
 from xml.dom.minidom import parseString
 from time import time
@@ -9,6 +10,11 @@ from time import time
 #map = {param1=>value1,param2=>value2}
 #Smugmug.method(map)
 
+def filename_get_data(name):
+  f = file(name,"rb")
+  d = f.read()
+  f.close()
+  return d
 
 def getText(nodelist):
     rc = ""
@@ -121,6 +127,14 @@ class SmREST:
             #print str(attr.name) + " " + str(attr.value)
             obj[tagName + attr.name] = attr.value
             
+class Exception:
+    def __init__(self, code, msg):
+        self.code = code
+        self.msg = msg
+        
+    def __str__(self):
+        return "%s: %s" % (str(self.code), str(self.msg))
+    
 class Smugmug:
     def __init__(self):
         self.sm = SmREST()
@@ -129,7 +143,17 @@ class Smugmug:
         rsp = self.sm.smugmug.login.withPassword(EmailAddress=username,
                                       Password=password,
                                       APIKey="4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ")
+        # handle invalid login
+        r = self.sm.findValue(rsp, "rsp/err")
+        if len(r) != 0:
+            msg = r[0].attributes["msg"].value
+            code = r[0].attributes["code"].value
+            
+            raise Exception(code, msg)
+        
         rsp = self.sm.findValue(rsp, "rsp/Login/SessionID")
+        if rsp is None:
+            print "rsp is none"
         sessionid = rsp[0].firstChild.data
         print "rc: " + str(sessionid)
         return sessionid
@@ -160,20 +184,96 @@ class Smugmug:
         rsp = self.sm.smugmug.albums.getInfo(SessionID=sessionid,AlbumID=albumId)
         rsp = self.sm.findValue(rsp, "rsp/Albums/Album")
         return self.sm.createObject(rsp)
+    
+    def createAlbum(self, sessionid, title, categoryId=0, **kargs):
+        rsp = self.sm.smugmug.albums.create(SessionID=sessionid, Title=title, CategoryID=categoryId, **kargs)
+        # should return an id
+        rsp = self.sm.findValue(rsp, "rsp/Create/Album/@id")
+        return int(rsp[0].value) # albumid
+    
+    def deleteAlbum(self, sessionid, albumid):
+        rsp = self.sm.smugmug.albums.delete(SessionID=sessionid, AlbumID=albumid)
+        rsp = self.sm.findValue(rsp, "rsp/Delete/Album/Successful");
+        return rsp[0].tagName
+    
+    def uploadImage(self, sessionid, albumid, filename):
+        print "uploadImage -----------------------------------------------------"
+        """
+            print "upload"
+    filename = "test.jpg"
+    data = filename_get_data(filename)
+    len = len(data)
+    
+    headers = {
+        "Content-Length":,
+        "Content-MD5":,
+        "X-Smug-SessionID":sessionid,
+        "X-Smug-Version":'1.1.1',
+        "X-Smug-ResponseType": 'REST',
+        "X-Smug-AlbumID": albumid,
+        "X-Smug-FileName": filename
+        }
+    filename = "photo.jpg"
+    conn = httplib.HTTPConnection("http://upload.smugmug.com/")
+    conn.request("PUT", filename, {}, headers)
+    response = conn.getresponse()
+    print response.status, response.reason
+    data = response.read()
+    print data
+    conn.close()
+    print "delete"
+    rsp = sm.smugmug.albums.delete(SessionID=sessionid,AlbumID=albumid)
+    rsp = sm.findValue(rsp, "rsp/Delete/Album/Successful");
+    print rsp[0].tagName
+        """
+        data = filename_get_data(filename)
+        size = len(data)
+        headers = {
+            "Content-Length":size,
+            "Content-MD5":md5.new(data).hexdigest(),
+            "X-Smug-SessionID":sessionid,
+            "X-Smug-Version":'1.1.1',
+            "X-Smug-ResponseType": 'REST',
+            "X-Smug-AlbumID": albumid,
+            "X-Smug-FileName": filename
+        }
+        
+        conn = httplib.HTTPConnection("upload.smugmug.com")
+        conn.request("PUT", filename, data, headers)
+        response = conn.getresponse()
+        print response.status, response.reason
+        print response.read()
+        conn.close()
+        print "uploadImage -------------------------------------------------"
+        
         
 if __name__ == "__main__":
     # 1.1.1
     #sm = SmREST()
 
     sm1 = Smugmug()
-    sessionid = sm1.loginWithPassword("jmrodri@gmail.com", "****")
+    sessionid = sm1.loginWithPassword("jmrodri@gmail.com", "Wakt$iaS")
     print "Smugmug returned: " + str(sessionid)
     
+    print "createalbum"
+    albumid = sm1.createAlbum(sessionid, "testalbum" + str(time()), Public=0)
+    print "albumid: " + str(albumid)
     print "getalbuminfo"
-    albuminfo = sm1.getAlbumInfo(sessionid, 2559293)
+    #albuminfo = sm1.getAlbumInfo(sessionid, 2559293)
+    albuminfo = sm1.getAlbumInfo(sessionid, albumid)
     print "albuminfo: " + str(albuminfo)
     if albuminfo['public']:
         print "this album is public"
+    else:
+        print "this album is PRIVATE"
+    
+    sm1.uploadImage(sessionid, albumid, "test.jpg")    
+    
+    #rc = sm1.deleteAlbum(sessionid, albumid)
+    #if rc:
+    #    print "album (%d) deleted" % albumid
+    #else:
+    #    print "could not delete album (%d)" % albumid
 
     
     print "getimages"
@@ -208,36 +308,7 @@ if __name__ == "__main__":
     
 
    
-    print "upload"
-    f = open("test.jpg")
-    
-    headers = {
-        "Content-Length":,
-        "Content-MD5":,
-        "X-Smug-SessionID":sessionid,
-        "X-Smug-Version":'1.1.1',
-        "X-Smug-ResponseType": 'REST',
-        "X-Smug-AlbumID": albumid,
-        "X-Smug-FileName": "foo.jpg"
-    filename = "photo.jpg"
-    conn = httplib.HTTPConnection("http://upload.smugmug.com/")
-    conn.request("PUT", filename, {}, headers)
-    response = conn.getresponse()
-    print response.status, response.reason
-    data = response.read()
-    print data
-    conn.close()
-    print "delete"
-    rsp = sm.smugmug.albums.delete(SessionID=sessionid,AlbumID=albumid)
-    rsp = sm.findValue(rsp, "rsp/Delete/Album/Successful");
-    print rsp[0].tagName
 
 
-    print "getimages for album: 2559293"
-    rsp = sm.smugmug.images.get(SessionID=sessionid,AlbumID=2559293)
-    rsp = sm.findValue(rsp, "rsp/Images/Image/@id")
-    # should return array of ids
-    print "count: " + str(len(rsp))
-    print rsp[0].value
     """
 
