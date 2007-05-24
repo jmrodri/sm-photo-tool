@@ -4,6 +4,7 @@ import md5
 from xml import xpath
 from xml.dom.minidom import parseString
 from time import time
+import simplejson
 
 #url?method=<name>&param1=value1....
 #
@@ -25,31 +26,25 @@ def getText(nodelist):
             rc = getText(node[0].childNodes)
         return rc
     
-class Image:
-    def __init__(self):
-        self.data = {}
+class BaseDict:
+    def __init__(self, data={}):
+        self.data = data
         
     def __setitem__(self, key, value):
         #print "__setitem__(%s:%s)" % (key,value)
-        self.data[key.lower()] = value
+        self.data[key] = value
     def __getitem__(self, key):
         #print "__getitem__(%s)" % (key)
-        return self.data[key.lower()]
+        return self.data[key]
     def __str__(self):
         return str(self.data)
 
-class Album:
-    def __init__(self):
-        self.data = {}
-        
-    def __setitem__(self, key, value):
-        #print "__setitem__(%s:%s)" % (key,value)
-        self.data[key.lower()] = value
-    def __getitem__(self, key):
-        #print "__getitem__(%s)" % (key)
-        return self.data[key.lower()]
-    def __str__(self):
-        return str(self.data)
+class Image(BaseDict):
+    pass
+
+class Album(BaseDict):
+    pass
+
 
 class _Method:
     # some magic to bind an XML-RPC method to an RPC server.
@@ -68,7 +63,8 @@ class SmREST:
     def __init__(self,version="1.1.1"):
         #http[s]://api.smugmug.com/hack/rest/1.2.0/
         #https://api.smugmug.com/hack/rest/1.1.1/
-        self.url="https://api.smugmug.com/hack/rest/%s/" % str(version)
+        #self.url="https://api.smugmug.com/hack/rest/%s/" % str(version)
+        self.url="https://api.smugmug.com/hack/json/%s/" % str(version)
         self.apikey="4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ"
         print self.url
 
@@ -137,36 +133,25 @@ class Exception:
     
 class Smugmug:
     def __init__(self):
-        self.sm = SmREST()
+        self.sm = SmREST("1.2.0")
     
     def loginWithPassword(self, username, password):
         rsp = self.sm.smugmug.login.withPassword(EmailAddress=username,
                                       Password=password,
                                       APIKey="4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ")
-        # handle invalid login
-        r = self.sm.findValue(rsp, "rsp/err")
-        if len(r) != 0:
-            msg = r[0].attributes["msg"].value
-            code = r[0].attributes["code"].value
-            
-            raise Exception(code, msg)
-        
-        rsp = self.sm.findValue(rsp, "rsp/Login/SessionID")
-        if rsp is None:
-            print "rsp is none"
-        sessionid = rsp[0].firstChild.data
-        print "rc: " + str(sessionid)
-        return sessionid
+        session = simplejson.loads(rsp)
+        if session['stat'] == "ok":
+            return session['Login']['Session']['id']
+        else:
+            raise Exception(session['code'], session['message'])
     
     def logout(self, sessionid):
         rsp = self.sm.smugmug.logout(SessionID=sessionid)
         
     def getImageInfo(self, sessionid, imageId):
         rsp = self.sm.smugmug.images.getInfo(SessionID=sessionid,ImageID=imageId)
-        # should return an Image object
-        rsp = self.sm.findValue(rsp, "rsp/Info/Image")
-        #print rsp[0]
-        return self.sm.createObject(rsp)
+        rsp = simplejson.loads(rsp)
+        return Image(rsp['Image'])
         
     def getImages(self, sessionid, albumId):
         """
@@ -174,27 +159,33 @@ class Smugmug:
         """
         imageids = []
         rsp = self.sm.smugmug.images.get(SessionID=sessionid,AlbumID=albumId)
-        rsp = self.sm.findValue(rsp, "rsp/Images/Image/@id")
-        # should return array of ids
-        for id in rsp:
-            imageids.append(id.value)
-        return imageids
+        rsp = simplejson.loads(rsp)
+        return rsp['Images'].keys()
     
     def getAlbumInfo(self, sessionid, albumId):
         rsp = self.sm.smugmug.albums.getInfo(SessionID=sessionid,AlbumID=albumId)
-        rsp = self.sm.findValue(rsp, "rsp/Albums/Album")
-        return self.sm.createObject(rsp)
+        rsp = simplejson.loads(rsp)
+        keys = rsp['Album'].keys()
+        print Album(rsp['Album'][keys[0]])
+        return Album(rsp['Album'][keys[0]])
     
     def createAlbum(self, sessionid, title, categoryId=0, **kargs):
         rsp = self.sm.smugmug.albums.create(SessionID=sessionid, Title=title, CategoryID=categoryId, **kargs)
+        # TODO: deal with error conditions
+        #    * 10 - "invalid title"
+        #    * 3 - "invalid session"
+        #    * 5 - "system error"
         # should return an id
-        rsp = self.sm.findValue(rsp, "rsp/Create/Album/@id")
-        return int(rsp[0].value) # albumid
+        rsp = simplejson.loads(rsp)
+        return rsp['Album']['id'] # albumid
     
     def deleteAlbum(self, sessionid, albumid):
         rsp = self.sm.smugmug.albums.delete(SessionID=sessionid, AlbumID=albumid)
-        rsp = self.sm.findValue(rsp, "rsp/Delete/Album/Successful");
-        return rsp[0].tagName
+        rsp = simplejson.loads(rsp)
+        # TODO: deal with error conditions
+        #     * 4 - "invalid user"
+        #     * 5 - "system error"
+        return rsp['Album'] # returns true or false
     
     def uploadImage(self, sessionid, albumid, filename):
         print "uploadImage -----------------------------------------------------"
@@ -262,18 +253,18 @@ if __name__ == "__main__":
     #albuminfo = sm1.getAlbumInfo(sessionid, 2559293)
     albuminfo = sm1.getAlbumInfo(sessionid, albumid)
     print "albuminfo: " + str(albuminfo)
-    if albuminfo['public']:
-        print "this album is public"
+    if albuminfo['Public']:
+        print "this album is Public"
     else:
         print "this album is PRIVATE"
     
-    sm1.uploadImage(sessionid, albumid, "test.jpg")    
+    #sm1.uploadImage(sessionid, albumid, "test.jpg")    
     
-    #rc = sm1.deleteAlbum(sessionid, albumid)
-    #if rc:
-    #    print "album (%d) deleted" % albumid
-    #else:
-    #    print "could not delete album (%d)" % albumid
+    rc = sm1.deleteAlbum(sessionid, albumid)
+    if rc:
+        print "album (%d) deleted" % albumid
+    else:
+        print "could not delete album (%d)" % albumid
 
     
     print "getimages"
@@ -284,8 +275,8 @@ if __name__ == "__main__":
     imgInfo = sm1.getImageInfo(sessionid, images[0])
     print "imageinfo: " + str(imgInfo)
     print "TinyURL = " + imgInfo['TinyURL']
-    print "imageid = " + imgInfo['imageid']
-    print "albumId = " + imgInfo['albumId']
+    print "imageid = " + str(imgInfo['id'])
+    print "albumId = " + str(imgInfo['Album']['id'])
     
     print "logout -------------------------------------------"
     rc = sm1.logout(sessionid)
