@@ -1,8 +1,6 @@
 #!/usr/bin/python
 import httplib, urllib
 import md5
-from xml import xpath
-from xml.dom.minidom import parseString
 from time import time
 import simplejson
 
@@ -175,17 +173,20 @@ class Smugmug:
         data = filename_get_data(filename)
         size = len(data)
         headers = {
-            "Content-Length":size,
+            "Content-Transfer-Encoding":'binary',
             "Content-MD5":md5.new(data).hexdigest(),
             "X-Smug-SessionID":sessionid,
-            "X-Smug-Version":'1.1.1',
+            "X-Smug-Version":'1.2.0',
             "X-Smug-ResponseType": 'REST',
             "X-Smug-AlbumID": albumid,
             "X-Smug-FileName": filename
         }
         
         conn = httplib.HTTPConnection("upload.smugmug.com")
-        conn.request("PUT", filename, data, headers)
+        #conn = httplib.HTTPConnection("localhost")
+        conn.connect()
+        #conn.set_debuglevel(1)
+        conn.request("POST", "photos/xmlrawadd.mg", data, headers)
         response = conn.getresponse()
         print response.status, response.reason
         print response.read()
@@ -213,7 +214,7 @@ if __name__ == "__main__":
     else:
         print "this album is PRIVATE"
     
-    #sm1.uploadImage(sessionid, albumid, "test.jpg")    
+    sm1.uploadImage(sessionid, albumid, "test.jpg")    
     
     rc = sm1.deleteAlbum(sessionid, albumid)
     if rc:
