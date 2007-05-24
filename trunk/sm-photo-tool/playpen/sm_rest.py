@@ -176,7 +176,7 @@ class Smugmug:
             "Content-Transfer-Encoding":'binary',
             "Content-MD5":md5.new(data).hexdigest(),
             "X-Smug-SessionID":sessionid,
-            "X-Smug-Version":'1.2.0',
+            "X-Smug-Version":'1.1.1',
             "X-Smug-ResponseType": 'REST',
             "X-Smug-AlbumID": albumid,
             "X-Smug-FileName": filename
@@ -185,8 +185,8 @@ class Smugmug:
         conn = httplib.HTTPConnection("upload.smugmug.com")
         #conn = httplib.HTTPConnection("localhost")
         conn.connect()
-        #conn.set_debuglevel(1)
-        conn.request("POST", "photos/xmlrawadd.mg", data, headers)
+        conn.set_debuglevel(5)
+        conn.request("PUT", filename, data, headers)
         response = conn.getresponse()
         print response.status, response.reason
         print response.read()
