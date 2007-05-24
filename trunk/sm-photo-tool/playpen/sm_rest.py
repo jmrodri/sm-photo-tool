@@ -17,15 +17,6 @@ def filename_get_data(name):
   f.close()
   return d
 
-def getText(nodelist):
-    rc = ""
-    for node in nodelist:
-        if node.nodeType == node.TEXT_NODE:
-            rc = rc + node.data
-        elif node.nodeType == node.ELEMENT_NODE:
-            rc = getText(node[0].childNodes)
-        return rc
-    
 class BaseDict:
     def __init__(self, data={}):
         self.data = data
@@ -86,42 +77,6 @@ class SmREST:
         rsp = urllib.urlopen(call).read()
         print "urlopen returned: " + str(rsp)
         return rsp
-
-    def findValue(self, doc, path):
-        dom1 = parseString(doc)
-        nodes = xpath.Evaluate(path, dom1)
-        return nodes
-        #return getText(nodes[0].childNodes)
-        
-    def createObject(self, nodeList):
-        print "createObj: " + str(dir(nodeList))
-        node = nodeList[0]
-        print "Creating class of type: " + str(node.nodeName)
-        clazz = eval(node.nodeName)
-        obj = clazz()
-       
-        # gather the attributes of the node
-        self.__processAttributes(obj, node.tagName, node.attributes)
-        self.__processNodes(obj, node.childNodes)
-            
-        return obj
-        
-    def __processNodes(self, obj, nodes):
-        for n in nodes:
-            if n.nodeType == n.TEXT_NODE:
-                obj[n.parentNode.tagName] = n.data
-            elif n.nodeType == n.ELEMENT_NODE:
-                #print n.tagName
-                if n.hasAttributes:
-                    self.__processAttributes(obj, n.tagName, n.attributes)
-                if n.hasChildNodes:
-                    self.__processNodes(obj, n.childNodes)
-                        
-    def __processAttributes(self, obj, tagName, attributes):
-        for i in range(attributes.length):
-            attr = attributes.item(i)
-            #print str(attr.name) + " " + str(attr.value)
-            obj[tagName + attr.name] = attr.value
             
 class Exception:
     def __init__(self, code, msg):
