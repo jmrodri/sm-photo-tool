@@ -3,6 +3,7 @@ import httplib, urllib
 import md5
 from time import time
 import simplejson
+from elementtree.ElementTree import ElementTree
 
 #url?method=<name>&param1=value1....
 #
@@ -142,36 +143,8 @@ class Smugmug:
     
     def uploadImage(self, sessionid, albumid, filename):
         print "uploadImage -----------------------------------------------------"
-        """
-            print "upload"
-    filename = "test.jpg"
-    data = filename_get_data(filename)
-    len = len(data)
-    
-    headers = {
-        "Content-Length":,
-        "Content-MD5":,
-        "X-Smug-SessionID":sessionid,
-        "X-Smug-Version":'1.1.1',
-        "X-Smug-ResponseType": 'REST',
-        "X-Smug-AlbumID": albumid,
-        "X-Smug-FileName": filename
-        }
-    filename = "photo.jpg"
-    conn = httplib.HTTPConnection("http://upload.smugmug.com/")
-    conn.request("PUT", filename, {}, headers)
-    response = conn.getresponse()
-    print response.status, response.reason
-    data = response.read()
-    print data
-    conn.close()
-    print "delete"
-    rsp = sm.smugmug.albums.delete(SessionID=sessionid,AlbumID=albumid)
-    rsp = sm.findValue(rsp, "rsp/Delete/Album/Successful");
-    print rsp[0].tagName
-        """
+        
         data = filename_get_data(filename)
-        size = len(data)
         headers = {
             "Content-Transfer-Encoding":'binary',
             "Content-MD5":md5.new(data).hexdigest(),
@@ -182,14 +155,23 @@ class Smugmug:
             "X-Smug-FileName": filename
         }
         
-        conn = httplib.HTTPConnection("upload.smugmug.com")
-        #conn = httplib.HTTPConnection("localhost")
+        conn = httplib.HTTPConnection("upload.smugmug.com", 80)
         conn.connect()
-        conn.set_debuglevel(5)
-        conn.request("PUT", filename, data, headers)
+        conn.request("PUT", '/' + filename, data, headers)
         response = conn.getresponse()
         print response.status, response.reason
-        print response.read()
+        rsp = response.read()
+        print rsp
+
+        if rsp.find('stat="ok"') > 0:
+            print "we're ok"
+        """
+        <?xml version='1.0' encoding="iso-8859-1" ?>
+            <rsp stat="fail">
+                        <err code="4" msg="Wrong format. (ByteCount given: ,  received.  MD5Sum given: ,  actual.)" />
+
+                    </rsp>
+        """
         conn.close()
         print "uploadImage -------------------------------------------------"
         
@@ -214,13 +196,16 @@ if __name__ == "__main__":
     else:
         print "this album is PRIVATE"
     
-    sm1.uploadImage(sessionid, albumid, "test.jpg")    
+    try:
+        sm1.uploadImage(sessionid, albumid, "test.jpg")    
+    finally:
+        print "upload image failed"
     
-    rc = sm1.deleteAlbum(sessionid, albumid)
-    if rc:
-        print "album (%d) deleted" % albumid
-    else:
-        print "could not delete album (%d)" % albumid
+    #rc = sm1.deleteAlbum(sessionid, albumid)
+    #if rc:
+    #    print "album (%d) deleted" % albumid
+    #else:
+    #    print "could not delete album (%d)" % albumid
 
     
     print "getimages"
