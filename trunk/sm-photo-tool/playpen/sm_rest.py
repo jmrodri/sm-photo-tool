@@ -94,6 +94,10 @@ class Smugmug:
                                       Password=password,
                                       APIKey="4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ")
         session = simplejson.loads(rsp)
+        # TODO: handle error cases
+        #    * 1 - "invalid login"
+        #    * 5 - "system error"
+        #    * 11 - "ancient version"
         if session['stat'] == "ok":
             return session['Login']['Session']['id']
         else:
@@ -101,10 +105,17 @@ class Smugmug:
     
     def logout(self, sessionid):
         rsp = self.sm.smugmug.logout(SessionID=sessionid)
+        rsp = simplejson.loads(rsp)
+        # TODO: handle error cases
+        #    * 3 - "invalid session"
+        #    * 5 - "system error"
         
     def getImageInfo(self, sessionid, imageId):
         rsp = self.sm.smugmug.images.getInfo(SessionID=sessionid,ImageID=imageId)
         rsp = simplejson.loads(rsp)
+        # TODO: handle error cases
+        #    * 4 - "invalid user (message)"
+        #    * 5 - "system error"
         return Image(rsp['Image'])
         
     def getImages(self, sessionid, albumId):
@@ -114,14 +125,20 @@ class Smugmug:
         imageids = []
         rsp = self.sm.smugmug.images.get(SessionID=sessionid,AlbumID=albumId)
         rsp = simplejson.loads(rsp)
-        return rsp['Images'].keys()
+        # TODO: handle error cases
+        #    * 4 - "invalid user (message)"
+        #    * 5 - "system error"
+        #    * 15 - "empty set"
+        print rsp
+        return [img['id'] for img in rsp['Images']] # list of ids
     
     def getAlbumInfo(self, sessionid, albumId):
         rsp = self.sm.smugmug.albums.getInfo(SessionID=sessionid,AlbumID=albumId)
         rsp = simplejson.loads(rsp)
-        keys = rsp['Album'].keys()
-        print Album(rsp['Album'][keys[0]])
-        return Album(rsp['Album'][keys[0]])
+        # TODO: handle error cases
+        #    * 4 - "invalid user (message)"
+        #    * 5 - "system error"
+        return Album(rsp['Album'])
     
     def createAlbum(self, sessionid, title, categoryId=0, **kargs):
         rsp = self.sm.smugmug.albums.create(SessionID=sessionid, Title=title, CategoryID=categoryId, **kargs)
@@ -188,7 +205,6 @@ if __name__ == "__main__":
     albumid = sm1.createAlbum(sessionid, "testalbum" + str(time()), Public=0)
     print "albumid: " + str(albumid)
     print "getalbuminfo"
-    #albuminfo = sm1.getAlbumInfo(sessionid, 2559293)
     albuminfo = sm1.getAlbumInfo(sessionid, albumid)
     print "albuminfo: " + str(albuminfo)
     if albuminfo['Public']:
@@ -200,16 +216,10 @@ if __name__ == "__main__":
         sm1.uploadImage(sessionid, albumid, "test.jpg")    
     finally:
         print "upload image failed"
-    
-    #rc = sm1.deleteAlbum(sessionid, albumid)
-    #if rc:
-    #    print "album (%d) deleted" % albumid
-    #else:
-    #    print "could not delete album (%d)" % albumid
 
     
     print "getimages"
-    images = sm1.getImages(sessionid, 2559293)
+    images = sm1.getImages(sessionid, 3008545)
     print "images: " + str(images)
     
     print "getimageinfo ---------------------------------------"
@@ -218,6 +228,12 @@ if __name__ == "__main__":
     print "TinyURL = " + imgInfo['TinyURL']
     print "imageid = " + str(imgInfo['id'])
     print "albumId = " + str(imgInfo['Album']['id'])
+
+    rc = sm1.deleteAlbum(sessionid, albumid)
+    if rc:
+        print "album (%d) deleted" % albumid
+    else:
+        print "could not delete album (%d)" % albumid
     
     print "logout -------------------------------------------"
     rc = sm1.logout(sessionid)
