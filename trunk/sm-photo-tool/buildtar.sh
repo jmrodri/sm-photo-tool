@@ -1,6 +1,6 @@
 #!/bin/bash
 NAME=sm-photo-tool
-VERSION=`grep "^version" src/sm-photo-tool.py | awk '{print $3}' | sed 's/\"//g'`
+VERSION=`grep "^version" src/sm_photo_tool.py | awk '{print $3}' | sed 's/\"//g'`
 mkdir /tmp/$NAME-$VERSION/
 cp LICENSE.TXT /tmp/$NAME-$VERSION/
 cp src/sm-photo-tool.py /tmp/$NAME-$VERSION/
