@@ -49,7 +49,7 @@ class _Method:
         #print "args: " + str(args)
         return self.__send(self.__name, args)
 
-class SmREST:
+class SmJSON:
     def __init__(self,version="1.1.1"):
         #http[s]://api.smugmug.com/hack/rest/1.2.0/
         #https://api.smugmug.com/hack/rest/1.1.1/
@@ -87,7 +87,7 @@ class Exception:
     
 class Smugmug:
     def __init__(self):
-        self.sm = SmREST("1.2.0")
+        self.sm = SmJSON("1.2.0")
     
     def loginWithPassword(self, username, password):
         rsp = self.sm.smugmug.login.withPassword(EmailAddress=username,
@@ -194,9 +194,6 @@ class Smugmug:
         
         
 if __name__ == "__main__":
-    # 1.1.1
-    #sm = SmREST()
-
     sm1 = Smugmug()
     sessionid = sm1.loginWithPassword("jmrodri@gmail.com", "****")
     print "Smugmug returned: " + str(sessionid)
