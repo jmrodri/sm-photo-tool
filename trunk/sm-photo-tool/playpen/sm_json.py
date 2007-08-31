@@ -157,6 +157,13 @@ class Smugmug:
         #     * 4 - "invalid user"
         #     * 5 - "system error"
         return rsp['Album'] # returns true or false
+
+    def getTree(self, sessionid, heavy=False):
+        rsp = self.sm.smugmug.users.getTree(SessionID=sessionid, Heavy=heavy)
+        rsp = simplejson.loads(rsp)
+
+        print rsp
+
     
     def uploadImage(self, sessionid, albumid, filename):
         print "uploadImage -----------------------------------------------------"
