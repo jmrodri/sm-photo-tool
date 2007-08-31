@@ -1,0 +1,9 @@
+mkdir
+/Children/Birthday/Foo
+
+for each path, store it in a map. 
+
+if Children is a category, store path and inode.
+/Children/Birthday - split up path. Look for each level in map.
+if Children is in map and marked as a category:
+    cool, check for /Children/Birthday 

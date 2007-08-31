@@ -26,8 +26,12 @@ class ZmugFS(Fuse):
     def __init__(self, *args, **kw):
         Fuse.__init__(self, *args, **kw)
         self._config = Config()
+        self._inodes= {}
 
     def getattr(self, path):
+        """
+        we need an inode cache for the files we have.
+        """
         print "getattr " + str(path)
         st = MyStat()
         if path == '/':
@@ -44,6 +48,8 @@ class ZmugFS(Fuse):
             st.st_mtime = int(time.time())
             st.st_ctime = int(time.time())
             st.st_size = len(path)
+        elif self._inodes.has_key(path):
+            return self._inodes[path]
         else:
             return -errno.ENOENT
 
@@ -60,32 +66,48 @@ class ZmugFS(Fuse):
     def mkdir(self, path, mode):
         print "mkdir: (%s): (%o)" % (str(path), mode)
         print "create gallery (%s) on smugmug" % str(path)
+
+        # split the path along the '/'.  the last one is
+        # an album. The other levels are categories.
+        dirs = path.split('/')
+        print dirs
+
         # get the octal of the mode to see if the album
         # should be public or not. Need to define a
         # whether g+r makes it public or not. u+r only
         # makes it private
         omode = oct(mode)
+
+        # add inode
+        st = MyStat()
+        st.st_mode = stat.S_IFDIR | mode
+        st.st_ino = 2
+        st.st_nlink = 1
+        st.st_atime = int(time.time())
+        st.st_mtime = int(time.time())
+        st.st_ctime = int(time.time())
+        self._inodes[path] = st
+
+        """
         sm = sm_json.Smugmug()
         sessionid = sm.loginWithPassword(self._config['smugmug.username'],
                                          self._config['smugmug.password'])
         sm.createAlbum(sessionid, path, Public=0)
         sm.logout(sessionid)
+        """
         return -errno.ENOSYS
 
 class Config:
     def __init__(self):
         self._config = {}
+
+        # read global config
+        self._readfile('/etc/zmugfs', 'zmugfs.conf')
+
+        # read local overrides
         homedir = os.environ.get('HOME')
         if homedir is not None:
-            config = os.path.join(homedir, '.zmugfsrc')
-            if os.path.isfile(config):
-                f = open(config, "r")
-                while f:
-                    line = f.readline()
-                    if len(line) == 0:
-                        break
-                    pairs = line.strip().split('=')
-                    self._config[pairs[0]] = pairs[1]
+            self._readfile(homedir, '.zmugfsrc')
 
     def __setitem__(self, key, value):
         self._config[key] = value
@@ -95,6 +117,19 @@ class Config:
 
     def __str__(self):
         return str(self._config)
+
+    def _readfile(self, path, file):
+        config = os.path.join(path, file)
+        if os.path.isfile(config):
+            f = open(config, "r")
+            while f:
+                line = f.readline()
+                if len(line) == 0:
+                    break
+                pairs = line.strip().split('=')
+                self._config[pairs[0]] = pairs[1]
+        else:
+            print "can't find " + str(config)
 
 def main():
     usage = """
