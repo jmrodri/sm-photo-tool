@@ -35,7 +35,6 @@ class Image(BaseDict):
 class Album(BaseDict):
     pass
 
-
 class _Method:
     # some magic to bind an XML-RPC method to an RPC server.
     # supports "nested" methods (e.g. examples.getStateName)
@@ -158,11 +157,11 @@ class Smugmug:
         #     * 5 - "system error"
         return rsp['Album'] # returns true or false
 
-    def getTree(self, sessionid, heavy=False):
+    def getTree(self, sessionid, heavy=0):
         rsp = self.sm.smugmug.users.getTree(SessionID=sessionid, Heavy=heavy)
         rsp = simplejson.loads(rsp)
-
-        print rsp
+        #print rsp
+        return rsp['Categories'] # returns array of categories
 
     
     def uploadImage(self, sessionid, albumid, filename):
@@ -204,7 +203,7 @@ if __name__ == "__main__":
     sm1 = Smugmug()
     sessionid = sm1.loginWithPassword("jmrodri@gmail.com", "****")
     print "Smugmug returned: " + str(sessionid)
-    
+    """ 
     print "createalbum"
     albumid = sm1.createAlbum(sessionid, "testalbum" + str(time()), Public=0)
     print "albumid: " + str(albumid)
@@ -238,6 +237,23 @@ if __name__ == "__main__":
         print "album (%d) deleted" % albumid
     else:
         print "could not delete album (%d)" % albumid
+    """
+    print "gettree ------------------------------------------"
+    rc = sm1.getTree(sessionid, 0)
+    #print rc
+    for cat in rc:
+        print "Category: (%s:%s) path:(/%s)" % (str(cat['id']), str(cat['Name']), str(cat['Name']))
+        if cat.has_key('SubCategories'):
+            for subcat in cat['SubCategories']:
+                print "\tSubcat: (%s:%s) path:(/%s/%s)" % (str(subcat['id']), str(subcat['Name']), str(cat['Name']), str(subcat['Name']))
+                #print subcat
+                for album in subcat['Albums']:
+                    print "\t\tAlbum: (%s:%s) path:(/%s/%s/%s)" % (str(album['id']), str(album['Title']), str(cat['Name']), str(subcat['Name']), str(album['Title']))
+                    #print album
+        if cat.has_key('Albums'):
+            for album in cat['Albums']:
+                print "\tAlbum: (%s:%s) path:(/%s/%s)" % (str(album['id']), str(album['Title']), str(cat['Name']), str(album['Title']))
+                #print album
     
     print "logout -------------------------------------------"
     rc = sm1.logout(sessionid)
