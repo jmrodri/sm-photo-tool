@@ -54,7 +54,7 @@ class ZmugFS(Fuse):
         st = MyStat()
         st.st_mode = stat.S_IFDIR | 0755
         st.st_ino = album['id']
-        st.st_nlink = 0
+        st.st_nlink = 1
         st.st_atime = int(time.time()) # no time from smugmug available
         st.st_mtime = _convert_date(album['LastUpdated']).time()
         st.st_ctime = _convert_date(album['LastUpdated']).time()
