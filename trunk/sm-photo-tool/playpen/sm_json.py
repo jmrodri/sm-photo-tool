@@ -157,10 +157,10 @@ class Smugmug:
         #     * 5 - "system error"
         return rsp['Album'] # returns true or false
 
+        
     def getTree(self, sessionid, heavy=0):
         rsp = self.sm.smugmug.users.getTree(SessionID=sessionid, Heavy=heavy)
         rsp = simplejson.loads(rsp)
-        #print rsp
         return rsp['Categories'] # returns array of categories
 
     
@@ -239,7 +239,7 @@ if __name__ == "__main__":
         print "could not delete album (%d)" % albumid
     """
     print "gettree ------------------------------------------"
-    rc = sm1.getTree(sessionid, 0)
+    rc = sm1.getTree(sessionid, 1)
     #print rc
     for cat in rc:
         print "Category: (%s:%s) path:(/%s)" % (str(cat['id']), str(cat['Name']), str(cat['Name']))
