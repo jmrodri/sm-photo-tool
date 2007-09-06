@@ -68,22 +68,26 @@ class ZmugFS(Fuse):
         tree = sm.getTree(sessionid, 1)
         for cat in tree:
             path = '/' + cat['Name']
-            print "cat path: " + path
+            print "cat path: [" + path + "]"
             self._inodes[path] = self._inode_from_category(cat)
             if cat.has_key('SubCategories'):
                 for subcat in cat['SubCategories']:
+                    path = '/' + cat['Name'] 
                     path += '/' + subcat['Name']
-                    print "subcat path: " + path
+                    print "subcat path: [" + path + "]"
                     self._inodes[path] = self._inode_from_subcat(subcat)
                     if subcat.has_key('Albums'):
                         for album in subcat['Albums']:
+                            path = '/' + cat['Name'] 
+                            path += '/' + subcat['Name'] 
                             path += '/' + album['Title']
-                            print "album path: " + path
+                            print "album path: [" + path + "]"
                             self._inodes[path] = self._inode_from_album(album)
             if cat.has_key('Albums'):
                 for album in cat['Albums']:
+                    path = '/' + cat['Name']
                     path += '/' + album['Title']
-                    print "album path: " + path
+                    print "album path: [" + path + "]"
                     self._inodes[path] = self._inode_from_album(album)
             
         sm.logout(sessionid)
@@ -92,7 +96,7 @@ class ZmugFS(Fuse):
         """
         we need an inode cache for the files we have.
         """
-        print "getattr " + str(path)
+        print "getattr [" + str(path) + "]"
         st = MyStat()
         if path == '/':
             st.st_mode = stat.S_IFDIR | 0755
