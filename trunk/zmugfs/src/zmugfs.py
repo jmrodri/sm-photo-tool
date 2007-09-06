@@ -1,9 +1,15 @@
 import fuse
 from fuse import Fuse
+from datetime import *
 import os, stat, errno, time
 import sm_json
 
 fuse.fuse_python_api = (0, 2)
+
+def _convert_date(dt):
+    ds = dt.replace(' ', '-').replace(':', '-').split('-')
+    d = map(int, ds) # convert all strings in ds to ints
+    return datetime(d[0], d[1], d[2], d[3], d[4], d[5])
 
 class MyStat(fuse.Stat):
     def __init__(self):
@@ -27,6 +33,60 @@ class ZmugFS(Fuse):
         Fuse.__init__(self, *args, **kw)
         self._config = Config()
         self._inodes= {}
+        self._indexTree()
+
+    def _inode_from_category(self, cat):
+        st = MyStat()
+        st.st_mode = stat.S_IFDIR | 0755
+        st.st_ino = cat['id']
+        st.st_nlink = 0
+        st.st_atime = int(time.time()) # no time from smugmug available
+        st.st_mtime = int(time.time())
+        st.st_ctime = int(time.time())
+        st.st_size = 0
+        return st
+
+    def _inode_from_subcat(self, subcat):
+        return self._inode_from_category(subcat)
+
+
+    def _inode_from_album(self, album):
+        st = MyStat()
+        st.st_mode = stat.S_IFDIR | 0755
+        st.st_ino = album['id']
+        st.st_nlink = 0
+        st.st_atime = int(time.time()) # no time from smugmug available
+        st.st_mtime = _convert_date(album['LastUpdated']).time()
+        st.st_ctime = _convert_date(album['LastUpdated']).time()
+        st.st_size = album['ImageCount']
+        return st
+
+    def _indexTree(self):
+        sm = sm_json.Smugmug()
+        sessionid = sm.loginWithPassword(self._config['smugmug.username'],
+                                         self._config['smugmug.password'])
+        tree = sm.getTree(sessionid, 1)
+        for cat in tree:
+            path = '/' + cat['Name']
+            print "cat path: " + path
+            self._inodes[path] = self._inode_from_category(cat)
+            if cat.has_key('SubCategories'):
+                for subcat in cat['SubCategories']:
+                    path += '/' + subcat['Name']
+                    print "subcat path: " + path
+                    self._inodes[path] = self._inode_from_subcat(subcat)
+                    if subcat.has_key('Albums'):
+                        for album in subcat['Albums']:
+                            path += '/' + album['Title']
+                            print "album path: " + path
+                            self._inodes[path] = self._inode_from_album(album)
+            if cat.has_key('Albums'):
+                for album in cat['Albums']:
+                    path += '/' + album['Title']
+                    print "album path: " + path
+                    self._inodes[path] = self._inode_from_album(album)
+            
+        sm.logout(sessionid)
 
     def getattr(self, path):
         """
