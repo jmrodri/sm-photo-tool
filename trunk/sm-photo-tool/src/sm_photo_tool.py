@@ -215,7 +215,7 @@ class Smugmug:
     if opts.easy_sharing_allowed != None:
       properties["Share"] = opts.easy_sharing_allowed
     if opts.print_ordering_allowed != None:
-      properties["Pritable"] = opts.print_ordering_allowed
+      properties["Printable"] = opts.print_ordering_allowed
     if opts.originals_allowed != None:
       properties["Originals"] = opts.originals_allowed
     if opts.community != None:
