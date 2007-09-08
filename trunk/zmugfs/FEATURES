@@ -7,3 +7,33 @@ if Children is a category, store path and inode.
 /Children/Birthday - split up path. Look for each level in map.
 if Children is in map and marked as a category:
     cool, check for /Children/Birthday 
+
+    ------------
+ls -l /tmp/fuse/Work
+^[[Aunique: 20, opcode: LOOKUP (1), nodeid: 1, insize: 45
+LOOKUP /Work
+getattr [/Work]
+   NODEID: 2
+   unique: 20, error: 0 (Success), outsize: 136
+unique: 21, opcode: OPENDIR (27), nodeid: 2, insize: 48
+   unique: 21, error: 0 (Success), outsize: 32
+unique: 22, opcode: READDIR (28), nodeid: 2, insize: 64
+readdir (/Work) (0)
+   unique: 22, error: 0 (Success), outsize: 48
+unique: 23, opcode: READDIR (28), nodeid: 2, insize: 64
+   unique: 23, error: 0 (Success), outsize: 16
+unique: 24, opcode: RELEASEDIR (29), nodeid: 2, insize: 64
+   unique: 24, error: 0 (Success), outsize: 16
+
+---------------
+fusermount -u /tmp/fuse
+
+unique: 25, opcode: FORGET (2), nodeid: 3, insize: 48
+FORGET 3/1
+delete: 3
+unique: 26, opcode: FORGET (2), nodeid: 2, insize: 48
+FORGET 2/4
+delete: 2
+unique: 27, opcode: FORGET (2), nodeid: 1, insize: 48
+FORGET 1/1
+
