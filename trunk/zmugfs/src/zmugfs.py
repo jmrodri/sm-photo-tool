@@ -54,10 +54,12 @@ class ZmugFS(Fuse):
         st = MyStat()
         st.st_mode = stat.S_IFDIR | 0755
         st.st_ino = album['id']
-        st.st_nlink = 1
+        st.st_nlink = 0
         st.st_atime = int(time.time()) # no time from smugmug available
-        st.st_mtime = _convert_date(album['LastUpdated']).time()
-        st.st_ctime = _convert_date(album['LastUpdated']).time()
+        st.st_mtime = int(time.time()) # no time from smugmug available
+        st.st_ctime = int(time.time()) # no time from smugmug available
+        #st.st_mtime = _convert_date(album['LastUpdated']).time()
+        #st.st_ctime = _convert_date(album['LastUpdated']).time()
         st.st_size = album['ImageCount']
         return st
 
@@ -119,9 +121,25 @@ class ZmugFS(Fuse):
 
         return st
 
+    #def opendir(self, path):
+        # prepare a directory for reading
+    #    print "opendir (%s)" % str(path)
+
+    #def releasedir(self, path):
+        # a process has closed the directory, and is no longer reading from it.
+    #    print "releasdir (%s)" % str(path)
+
+    #def fsyncdir(self, path, sync):
+        # flush a directory to permanent storage
+    #    pass
+    
     def readdir(self, path, offset):
+        # read the next directory entry
         print "readdir (%s) (%d)" % (str(path), int(offset))
-        yield fuse.Direntry(path)
+        # look up the path, then get all the files in it.
+        l = [path, 'foo', 'bar', 'baz']
+        for i in l:
+            yield fuse.Direntry(i)
 
     def read(self, path, size, offset):
         print "read (%s): %d:%d)" % (str(path), int(size), int(offset))
