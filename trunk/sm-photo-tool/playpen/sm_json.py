@@ -3,7 +3,7 @@ import httplib, urllib
 import md5
 from time import time
 import simplejson
-from elementtree.ElementTree import ElementTree
+#from elementtree.ElementTree import ElementTree
 
 #url?method=<name>&param1=value1....
 #
