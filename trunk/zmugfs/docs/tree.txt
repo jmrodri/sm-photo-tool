@@ -1,0 +1,46 @@
+class DirTree:
+    string path
+    list nodes
+    type
+
+class node:
+    string path
+    MyStat inode
+    int depth
+
+DirTreeIndex:
+    ctor(DirTree)
+    nodesByPath
+    childToParentMap
+    tree = treeIn
+    depthMap
+    nodeLevels
+
+
+    indexTree() {
+        int depth = 0
+        List nodes = tree.getNodes()
+        nodeLevels.add(depth, nodes)
+        for node in nodes:
+            indexNode(n, depth + 1)
+    }
+
+    indexNode(Node parent) {
+        nodesByLabel[parent.getPath()] = parent
+        List nodesAtCurrentDepth = parent.getNodes()
+        nodeLevels.add(depth, nodesAtCurrentDepth)
+
+        for child in nodesAtCurrentDepth:
+            childToParentMap[child] = parent
+            indexNode(child, depth + 1)
+    }
+
+---------------------
+For each path returned by smugmug.getTree()
+I need to index it, and keep track of the children, so when readdir() is
+implemented I should be able to do this:
+
+readdir(self, path, offset):
+    node = self._index[path]
+    for child in node.get_children:
+        yield Fuse.Direntry(child['name'])
