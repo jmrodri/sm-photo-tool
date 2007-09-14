@@ -3,6 +3,7 @@ import httplib, urllib
 import md5
 from time import time
 import simplejson
+from config import Config
 #from elementtree.ElementTree import ElementTree
 
 #url?method=<name>&param1=value1....
@@ -200,8 +201,10 @@ class Smugmug:
         
         
 if __name__ == "__main__":
+    config = Config('/etc/sm_json/sm_json.conf', '.smjsonrc')
     sm1 = Smugmug()
-    sessionid = sm1.loginWithPassword("jmrodri@gmail.com", "****")
+    sessionid = sm1.loginWithPassword(config['smugmug.username'],
+                                      config['smugmug.password'])
     print "Smugmug returned: " + str(sessionid)
     """ 
     print "createalbum"
