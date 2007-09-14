@@ -203,8 +203,8 @@ class Smugmug:
 if __name__ == "__main__":
     config = Config('/etc/sm_json/sm_json.conf', '.smjsonrc')
     sm1 = Smugmug()
-    sessionid = sm1.loginWithPassword(config['smugmug.username'],
-                                      config['smugmug.password'])
+    sessionid = sm1.loginWithPassword(config.get_property('smugmug.username'),
+                                      config.get_property('smugmug.password'))
     print "Smugmug returned: " + str(sessionid)
     """ 
     print "createalbum"
