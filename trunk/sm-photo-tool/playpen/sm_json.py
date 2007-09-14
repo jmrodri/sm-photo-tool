@@ -201,7 +201,7 @@ class Smugmug:
         
 if __name__ == "__main__":
     sm1 = Smugmug()
-    sessionid = sm1.loginWithPassword("jmrodri@gmail.com", "****")
+    sessionid = sm1.loginWithPassword("jmrodri@gmail.com", "luvLiz69")
     print "Smugmug returned: " + str(sessionid)
     """ 
     print "createalbum"
