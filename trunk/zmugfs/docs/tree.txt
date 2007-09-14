@@ -7,6 +7,7 @@ class node:
     string path
     MyStat inode
     int depth
+    list children
 
 DirTreeIndex:
     ctor(DirTree)
