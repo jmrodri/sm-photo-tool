@@ -36,6 +36,40 @@ class Image(BaseDict):
 class Album(BaseDict):
     pass
 
+class Category(object):
+    def __init__(self, id, name):
+        self.id = id
+        self.name = name
+        self.albums = []
+        self.categories = []
+
+class Tree(object):
+    def __init__(self):
+        self.categories = []
+
+def create_tree(nodes):
+    tree = Tree()
+    if nodes.has_key('Categories'):
+        for node in nodes['Categories']:
+            cat = Category(node['id'], node['Name'])
+            if node.has_key('SubCategories'):
+                for subcat in node['SubCategories']:
+                    child = Category(subcat['id'], subcat['Name'])
+                    if subcat.has_key('Albums'):
+                        for a in subcat['Albums']:
+                            album = Album(a)
+                            child.albums.add(album)
+                    cat.categories.add(child)
+            if node.has_key('Albums'):
+                for a in node['Albums']:
+                    album = Album(a)
+                    cat.albums.add(album)
+
+            tree.categories.add(cat)
+
+    return tree                        
+    
+    
 class _Method:
     # some magic to bind an XML-RPC method to an RPC server.
     # supports "nested" methods (e.g. examples.getStateName)
@@ -161,8 +195,8 @@ class Smugmug:
         
     def getTree(self, sessionid, heavy=0):
         rsp = self.sm.smugmug.users.getTree(SessionID=sessionid, Heavy=heavy)
-        rsp = simplejson.loads(rsp)
-        return rsp['Categories'] # returns array of categories
+        # returns array of categories
+        return simplejson.loads(rsp, object_hook=create_tree)
 
     
     def uploadImage(self, sessionid, albumid, filename):
@@ -243,7 +277,8 @@ if __name__ == "__main__":
     """
     print "gettree ------------------------------------------"
     rc = sm1.getTree(sessionid, 1)
-    #print rc
+    print rc
+    """
     for cat in rc:
         print "Category: (%s:%s) path:(/%s)" % (str(cat['id']), str(cat['Name']), str(cat['Name']))
         if cat.has_key('SubCategories'):
@@ -257,6 +292,7 @@ if __name__ == "__main__":
             for album in cat['Albums']:
                 print "\tAlbum: (%s:%s) path:(/%s/%s)" % (str(album['id']), str(album['Title']), str(cat['Name']), str(album['Title']))
                 #print album
+    """
     
     print "logout -------------------------------------------"
     rc = sm1.logout(sessionid)
