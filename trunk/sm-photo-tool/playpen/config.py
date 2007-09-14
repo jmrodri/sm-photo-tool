@@ -9,7 +9,7 @@ class Config:
 
         # read local overrides
         homedir = os.environ.get('HOME')
-        if homedir is not None:
+        if homedir is not None and local_conf is not None:
             l_config = os.path.join(homedir, local_conf)
             self._readfile(l_config)
 
@@ -33,3 +33,12 @@ class Config:
                 self._config[pairs[0]] = pairs[1]
         else:
             print "can't find " + str(config)
+
+    def get_int(self, property):
+        return int(self.get_property(property))
+
+    def get_property(self, property):
+        return self.__getitem__(property)
+
+    def set_property(self, name, value):
+        self.__setitem__(name, value)
