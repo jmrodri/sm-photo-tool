@@ -228,7 +228,7 @@ class Smugmug:
             "Content-MD5":md5.new(data).hexdigest(),
             "X-Smug-SessionID":sessionid,
             "X-Smug-Version":'1.1.1',
-            "X-Smug-ResponseType": 'REST',
+            "X-Smug-ResponseType": 'JSON',
             "X-Smug-AlbumID": albumid,
             "X-Smug-FileName": filename
         }
