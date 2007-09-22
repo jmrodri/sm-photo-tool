@@ -17,6 +17,9 @@ def filename_get_data(name):
   f.close()
   return d
 
+#####################################################################
+# Supporting classes for Smugmug data objects
+#####################################################################
 class BaseDict:
     def __init__(self, data={}):
         self.data = data
@@ -47,6 +50,15 @@ class Tree(object):
     def __init__(self):
         self.categories = []
 
+    def print_tree(self):
+        for cat in self.categories:
+            print "Category: %d - %s" % (cat.id, cat.name)
+            print "\t%d albums" % len(cat.albums)
+            print "\t%d subcats" % len(cat.categories)
+            for scat in cat.categories:
+                print "\tCategory: %d - %s" % (scat.id, scat.name)
+                print "\t\t%d albums" % len(scat.albums)
+
 def create_tree(nodes):
     tree = Tree()
     if nodes.has_key('Categories'):
@@ -58,21 +70,26 @@ def create_tree(nodes):
                     if subcat.has_key('Albums'):
                         for a in subcat['Albums']:
                             album = Album(a)
-                            child.albums.add(album)
-                    cat.categories.add(child)
+                            child.albums.append(album)
+                    cat.categories.append(child)
             if node.has_key('Albums'):
                 for a in node['Albums']:
                     album = Album(a)
-                    cat.albums.add(album)
+                    cat.albums.append(album)
 
-            tree.categories.add(cat)
+            tree.categories.append(cat)
 
     return tree                        
-    
-    
+
+#####################################################################
+# JSON-PRC proxy
+#####################################################################
+
 class _Method:
-    # some magic to bind an XML-RPC method to an RPC server.
-    # supports "nested" methods (e.g. examples.getStateName)
+    """
+    some magic to bind an XML-RPC method to an RPC server.
+    supports "nested" methods (e.g. examples.getStateName)
+    """
     def __init__(self, send, name):
         self.__send = send
         self.__name = name
@@ -85,9 +102,6 @@ class _Method:
 
 class SmJSON:
     def __init__(self,version="1.1.1"):
-        #http[s]://api.smugmug.com/hack/rest/1.2.0/
-        #https://api.smugmug.com/hack/rest/1.1.1/
-        #self.url="https://api.smugmug.com/hack/rest/%s/" % str(version)
         self.url="https://api.smugmug.com/hack/json/%s/" % str(version)
         self.apikey="4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ"
         print self.url
@@ -119,6 +133,9 @@ class Exception:
     def __str__(self):
         return "%s: %s" % (str(self.code), str(self.msg))
     
+#####################################################################
+# Smugmug API wrapper, uses SmJSON as the RPC proxy
+#####################################################################
 class Smugmug:
     def __init__(self):
         self.sm = SmJSON("1.2.0")
@@ -192,8 +209,11 @@ class Smugmug:
         #     * 5 - "system error"
         return rsp['Album'] # returns true or false
 
-        
+       
     def getTree(self, sessionid, heavy=0):
+        """
+        returns a Tree object
+        """
         rsp = self.sm.smugmug.users.getTree(SessionID=sessionid, Heavy=heavy)
         # returns array of categories
         return simplejson.loads(rsp, object_hook=create_tree)
@@ -234,6 +254,9 @@ class Smugmug:
         print "uploadImage -------------------------------------------------"
         
         
+#####################################################################
+# MAIN
+#####################################################################
 if __name__ == "__main__":
     config = Config('/etc/sm_json/sm_json.conf', '.smjsonrc')
     sm1 = Smugmug()
@@ -276,8 +299,8 @@ if __name__ == "__main__":
         print "could not delete album (%d)" % albumid
     """
     print "gettree ------------------------------------------"
-    rc = sm1.getTree(sessionid, 1)
-    print rc
+    tree = sm1.getTree(sessionid, 1)
+    print tree.print_tree()
     """
     for cat in rc:
         print "Category: (%s:%s) path:(/%s)" % (str(cat['id']), str(cat['Name']), str(cat['Name']))
