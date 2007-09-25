@@ -222,46 +222,17 @@ class ZmugFS(Fuse):
     def readdir(self, path, offset):
         # read the next directory entry
         print "readdir (%s) (%d)" % (str(path), int(offset))
-        # look up the path, then get all the files in it.
-        #f = ['foo', 'bar', 'path', 'cheese']
-        #for i in f:
-        #    yield fuse.Direntry(i)
 
         node = self._nodes_by_path[path]
 
-        #f = []
         for n in node.get_nodes():
             print "would return (%s) for path (%s)" % (n.path, path)
-        #    f.append(n.path.strip('/'))
-        #   why doesn't this work?
             yield fuse.Direntry(n.path.strip('/').encode('ascii'))
 
         #f = ['foo', 'bar', 'path', 'cheese']
         #print f
         #for i in f:
         #    yield fuse.Direntry(i)
-
-        #node = self._nodes_by_path[path]
-        #for n in node.get_nodes():
-        #    print "readdir: " +  str(n.name)
-        #for n in node.get_nodes():
-        #    print "readdir: " +  str(n.name)
-        #yield fuse.Direntry(".")
-        #yield fuse.Direntry("..")
-        #for n in node.get_nodes():
-        #    print str(n.name)
-        #    yield fuse.Direntry(n.name)
-            #entry = fuse.Direntry(path + '/' + n.name)
-            #if path == '/':
-            #    entry.ino = self._nodes_by_path[path + n.name].inode.st_ino
-            #else:
-            #    entry.ino = self._nodes_by_path[path + '/' + n.name].inode.st_ino
-            #entry.type = stat.S_IFDIR
-            #print dir(entry)
-            #print entry.name
-            #print entry.ino
-            #print entry.type
-            #dirlist.append(entry)
 
     def read(self, path, size, offset):
         print "read (%s): %d:%d)" % (str(path), int(size), int(offset))
