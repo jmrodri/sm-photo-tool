@@ -229,14 +229,17 @@ class ZmugFS(Fuse):
 
         node = self._nodes_by_path[path]
 
+        #f = []
         for n in node.get_nodes():
             print "would return (%s) for path (%s)" % (n.path, path)
+        #    f.append(n.path.strip('/'))
         #   why doesn't this work?
-        #    yield fuse.Direntry(n.path)
+            yield fuse.Direntry(n.path.strip('/').encode('ascii'))
 
-        f = ['foo', 'bar', 'path', 'cheese']
-        for i in f:
-            yield fuse.Direntry(i)
+        #f = ['foo', 'bar', 'path', 'cheese']
+        #print f
+        #for i in f:
+        #    yield fuse.Direntry(i)
 
         #node = self._nodes_by_path[path]
         #for n in node.get_nodes():
