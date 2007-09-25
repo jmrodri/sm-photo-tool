@@ -25,6 +25,48 @@ class MyStat(fuse.Stat):
         self.st_mtime = 0
         self.st_ctime = 0
 
+class Node(object):
+    def __init__(self, path, inode=MyStat(), children=None):
+        self.path = path
+        self.inode = inode
+        if children is None:
+            self.children = []
+        else:
+            self.children = children
+
+    def get_nodes(self):
+        return self.children
+
+    def add_node(self, node):
+        self.children.append(node)
+
+#class TreeIndex(object):
+#    def __init__(self, tree):
+#        self.tree = tree
+#        self.nodes_by_path = {}
+#        self.child_to_parent_map = {}
+#        self.depth_map = {}
+#        self.node_levels = []
+#        self._indexTree()
+#
+#    def _indexTree(self):
+#        depth = 0
+#        nodesAtCurrentDepth = self.tree.children()
+#        self.node_levels.insert(depth, nodesAtCurrentDepth)
+#
+#        for n in nodesAtCurrentDepth:
+#            self._indexCat(n, depth + 1)
+#
+#    def _indexCat(self, node, depth):
+#        self.depth_map[node] = depth
+#        current_depth = node.children()
+#        self.node_levels.insert(depth, current_depth)
+#        self.nodes_by_path[node.path] = node
+#        for n in current_depth:
+#            self.child_to_parent_map[n] = node
+#            self._indexCat(n, depth + 1)
+
+        
 class ZmugFS(Fuse):
     """
     Need to implement Fuse api
@@ -33,18 +75,18 @@ class ZmugFS(Fuse):
     def __init__(self, *args, **kw):
         Fuse.__init__(self, *args, **kw)
         self._config = Config('/etc/zmugfs/zmugfs.conf', '.zmugfsrc')
-        self._inodes= {}
+        self._nodes_by_path = {}
         self._indexTree()
 
     def _inode_from_category(self, cat):
         st = MyStat()
         st.st_mode = stat.S_IFDIR | 0755
-        st.st_ino = cat['id']
+        st.st_ino = cat.id
         st.st_nlink = 0
         st.st_atime = int(time.time()) # no time from smugmug available
         st.st_mtime = int(time.time())
         st.st_ctime = int(time.time())
-        st.st_size = 0
+        st.st_size = len(cat.categories) + len(cat.albums)
         return st
 
     def _inode_from_subcat(self, subcat):
@@ -64,36 +106,78 @@ class ZmugFS(Fuse):
         st.st_size = album['ImageCount']
         return st
 
+    def _split_path(self, path):
+        splitpath = path.strip('/').split('/')
+        pathprefixes = []
+        for i in reversed(range(1, len(splitpath) + 1)):
+            p = "/"
+            p = p.join(splitpath[:i])
+            pathprefixes.append(p)
+        pathprefixes.append('/')
+        return pathprefixes
+
+    def find_best_node(self, path):
+        paths = self._split_path(path)
+        for p in paths:
+            if self._nodes_by_path.has_key(p):
+                return self._nodes_by_path[p]
+
     def _indexTree(self):
         sm = sm_json.Smugmug()
         sessionid = sm.loginWithPassword(self._config['smugmug.username'],
                                          self._config['smugmug.password'])
         tree = sm.getTree(sessionid, 1)
-        for cat in tree:
-            path = '/' + cat['Name']
-            print "cat path: [" + path + "]"
-            self._inodes[path] = self._inode_from_category(cat)
-            if cat.has_key('SubCategories'):
-                for subcat in cat['SubCategories']:
-                    path = '/' + cat['Name'] 
-                    path += '/' + subcat['Name']
-                    print "subcat path: [" + path + "]"
-                    self._inodes[path] = self._inode_from_subcat(subcat)
-                    if subcat.has_key('Albums'):
-                        for album in subcat['Albums']:
-                            path = '/' + cat['Name'] 
-                            path += '/' + subcat['Name'] 
-                            path += '/' + album['Title']
-                            print "album path: [" + path + "]"
-                            self._inodes[path] = self._inode_from_album(album)
-            if cat.has_key('Albums'):
-                for album in cat['Albums']:
-                    path = '/' + cat['Name']
-                    path += '/' + album['Title']
-                    print "album path: [" + path + "]"
-                    self._inodes[path] = self._inode_from_album(album)
+        #treeIdx = TreeIndex(tree)
+        #n = treeIdx.find_best_node("/Children/Birthday")
+        #print str(n)
+        #rootNode = Node('/', self.getattr('/'), tree.children())
+        #self._nodes_by_path['/'] = rootNode
+
+        for cat in tree.children():
+            catpath = '/' + cat.name
+            print "cat path: [" + catpath + "]"
+            self._nodes_by_path[catpath] = self._create_node(cat, catpath)
+            print "before adding children: %s" % len(self._nodes_by_path[catpath].children)
+            for subcat in cat.categories:
+                subpath = catpath + '/' + subcat.name
+                print "subcat path: [" + subpath + "]"
+                snode = self._create_node(subcat, '/' + subcat.name)
+                self._nodes_by_path[subpath] = snode
+                self._nodes_by_path[catpath].children.append(snode)
+                print "%s: after adding child: %s" % (catpath, len(self._nodes_by_path[catpath].children))
+                for album in subcat.albums:
+                    apath = subpath + '/' + album['Title']
+                    print "album path: [" + apath + "]"
+                    anode = self._create_node(album, '/' + album['Title'])
+                    self._nodes_by_path[apath] = anode
+                    self._nodes_by_path[subpath].children.append(anode)
+                    print "%s: after adding child: %s" % (subpath, len(self._nodes_by_path[subpath].children))
+            for album in cat.albums:
+                apath = catpath + '/' + album['Title']
+                print "album path: [" + apath + "]"
+                anode = self._create_node(album, '/' + album['Title'])
+                self._nodes_by_path[apath] = anode
+                self._nodes_by_path[catpath].children.append(anode)
+                print "%s: after adding child: %s" % (catpath, len(self._nodes_by_path[catpath].children))
             
         sm.logout(sessionid)
+
+        print "begin nodes by path -----------------------------------"
+        for k in self._nodes_by_path.keys():
+            print k
+        print "end nodes by path -----------------------------------"
+
+    def _create_node(self, item, path):
+        node = None
+
+        if isinstance(item, sm_json.Album):
+            node = Node(path, self._inode_from_album(item))
+        elif isinstance(item, sm_json.Category):
+            node = Node(path, self._inode_from_category(item))
+        else:
+            node = Node(path, self._inode_from_category(item))
+
+        return node
 
     def getattr(self, path):
         """
@@ -115,32 +199,66 @@ class ZmugFS(Fuse):
             st.st_mtime = int(time.time())
             st.st_ctime = int(time.time())
             st.st_size = len(path)
-        elif self._inodes.has_key(path):
-            return self._inodes[path]
+        elif self._nodes_by_path.has_key(path):
+            print "returnining inode for (%s)" % str(path)
+            return self._nodes_by_path[path].inode
         else:
             return -errno.ENOENT
 
         return st
 
     #def opendir(self, path):
-        # prepare a directory for reading
+    #    # prepare a directory for reading
     #    print "opendir (%s)" % str(path)
 
     #def releasedir(self, path):
-        # a process has closed the directory, and is no longer reading from it.
-    #    print "releasdir (%s)" % str(path)
+    #    # a process has closed the directory, and is no longer reading from it.
+    #    print "releasedir (%s)" % str(path)
 
     #def fsyncdir(self, path, sync):
-        # flush a directory to permanent storage
+    #    # flush a directory to permanent storage
     #    pass
     
     def readdir(self, path, offset):
         # read the next directory entry
         print "readdir (%s) (%d)" % (str(path), int(offset))
         # look up the path, then get all the files in it.
-        l = [path, 'foo', 'bar', 'baz']
-        for i in l:
+        #f = ['foo', 'bar', 'path', 'cheese']
+        #for i in f:
+        #    yield fuse.Direntry(i)
+
+        node = self._nodes_by_path[path]
+
+        for n in node.get_nodes():
+            print "would return (%s) for path (%s)" % (n.path, path)
+        #   why doesn't this work?
+        #    yield fuse.Direntry(n.path)
+
+        f = ['foo', 'bar', 'path', 'cheese']
+        for i in f:
             yield fuse.Direntry(i)
+
+        #node = self._nodes_by_path[path]
+        #for n in node.get_nodes():
+        #    print "readdir: " +  str(n.name)
+        #for n in node.get_nodes():
+        #    print "readdir: " +  str(n.name)
+        #yield fuse.Direntry(".")
+        #yield fuse.Direntry("..")
+        #for n in node.get_nodes():
+        #    print str(n.name)
+        #    yield fuse.Direntry(n.name)
+            #entry = fuse.Direntry(path + '/' + n.name)
+            #if path == '/':
+            #    entry.ino = self._nodes_by_path[path + n.name].inode.st_ino
+            #else:
+            #    entry.ino = self._nodes_by_path[path + '/' + n.name].inode.st_ino
+            #entry.type = stat.S_IFDIR
+            #print dir(entry)
+            #print entry.name
+            #print entry.ino
+            #print entry.type
+            #dirlist.append(entry)
 
     def read(self, path, size, offset):
         print "read (%s): %d:%d)" % (str(path), int(size), int(offset))
