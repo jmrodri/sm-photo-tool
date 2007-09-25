@@ -37,7 +37,16 @@ class Image(BaseDict):
     pass
 
 class Album(BaseDict):
-    pass
+
+    def __getattr__(self, name):
+        if name == "name":
+            return self.data['Title']
+        else:
+            return self.data[name]
+
+    def children(self):
+        return None
+        
 
 class Category(object):
     def __init__(self, id, name):
@@ -46,12 +55,18 @@ class Category(object):
         self.albums = []
         self.categories = []
 
+    def children(self):
+        return self.categories + self.albums
+
 class Tree(object):
     def __init__(self):
-        self.categories = []
+        self.nodes = []
+
+    def children(self):
+        return self.nodes
 
     def print_tree(self):
-        for cat in self.categories:
+        for cat in self.nodes:
             print "Category: %d - %s" % (cat.id, cat.name)
             print "\t%d albums" % len(cat.albums)
             print "\t%d subcats" % len(cat.categories)
@@ -77,7 +92,7 @@ def create_tree(nodes):
                     album = Album(a)
                     cat.albums.append(album)
 
-            tree.categories.append(cat)
+            tree.nodes.append(cat)
 
     return tree                        
 
