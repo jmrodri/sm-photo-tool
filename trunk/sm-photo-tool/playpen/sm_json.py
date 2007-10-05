@@ -116,8 +116,8 @@ class _Method:
         return self.__send(self.__name, args)
 
 class SmJSON:
-    def __init__(self,version="1.1.1"):
-        self.url="https://api.smugmug.com/hack/json/%s/" % str(version)
+    def __init__(self,version="1.2.1"):
+        self.url="https://api.smugmug.com/services/api/json/%s/" % str(version)
         self.apikey="4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ"
         print self.url
 
@@ -153,7 +153,7 @@ class Exception:
 #####################################################################
 class Smugmug:
     def __init__(self):
-        self.sm = SmJSON("1.2.0")
+        self.sm = SmJSON("1.2.1")
     
     def loginWithPassword(self, username, password):
         rsp = self.sm.smugmug.login.withPassword(EmailAddress=username,
@@ -235,6 +235,7 @@ class Smugmug:
 
     
     def uploadImage(self, sessionid, albumid, filename):
+        imageid = 0
         print "uploadImage -----------------------------------------------------"
         
         data = filename_get_data(filename)
@@ -255,18 +256,14 @@ class Smugmug:
         print response.status, response.reason
         rsp = response.read()
         print rsp
+        rsp = simplejson.loads(rsp)
 
-        if rsp.find('stat="ok"') > 0:
+        if rsp.has_key('stat') and rsp['stat'] == "ok":
             print "we're ok"
-        """
-        <?xml version='1.0' encoding="iso-8859-1" ?>
-            <rsp stat="fail">
-                        <err code="4" msg="Wrong format. (ByteCount given: ,  received.  MD5Sum given: ,  actual.)" />
-
-                    </rsp>
-        """
+            imageid = rsp['Image']['id']
         conn.close()
         print "uploadImage -------------------------------------------------"
+        return imageid
         
         
 #####################################################################
@@ -278,7 +275,6 @@ if __name__ == "__main__":
     sessionid = sm1.loginWithPassword(config.get_property('smugmug.username'),
                                       config.get_property('smugmug.password'))
     print "Smugmug returned: " + str(sessionid)
-    """ 
     print "createalbum"
     albumid = sm1.createAlbum(sessionid, "testalbum" + str(time()), Public=0)
     print "albumid: " + str(albumid)
@@ -297,7 +293,7 @@ if __name__ == "__main__":
 
     
     print "getimages"
-    images = sm1.getImages(sessionid, 3008545)
+    images = sm1.getImages(sessionid, 3167690)
     print "images: " + str(images)
     
     print "getimageinfo ---------------------------------------"
@@ -312,7 +308,6 @@ if __name__ == "__main__":
         print "album (%d) deleted" % albumid
     else:
         print "could not delete album (%d)" % albumid
-    """
     print "gettree ------------------------------------------"
     tree = sm1.getTree(sessionid, 1)
     print tree.print_tree()
@@ -342,18 +337,3 @@ if __name__ == "__main__":
 
     print type(classinstance)
     print dir(classinstance)
-    
-    """
-    print "calling albums.create"
-    rsp = sm.smugmug.albums.create(SessionID=sessionid, Title="testalbum" + str(time()), CategoryID=0)
-    # should return an id
-    rsp = sm.findValue(rsp, "rsp/Create/Album/@id")
-    albumid = rsp[0].value
-    print albumid
-    
-
-   
-
-
-    """
-
