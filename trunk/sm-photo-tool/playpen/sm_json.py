@@ -183,8 +183,28 @@ class Smugmug:
         #    * 4 - "invalid user (message)"
         #    * 5 - "system error"
         return Image(rsp['Image'])
-        
-    def getImages(self, sessionid, albumId):
+       
+    def getImages(self, sessionid, albumId, heavy=1):
+        """
+        returns list of imageids for the given albumId
+        """
+        imageids = []
+        rsp = self.sm.smugmug.images.get(SessionID=sessionid,AlbumID=albumId,Heavy=heavy)
+        rsp = simplejson.loads(rsp)
+        # TODO: handle error cases
+        #    * 4 - "invalid user (message)"
+        #    * 5 - "system error"
+        #    * 15 - "empty set"
+        print rsp
+        if rsp['stat'] == "fail":
+            if rsp['code'] == 15:
+                return [] # empty list
+            else:
+                raise rsp['message']
+
+        return rsp['Images']
+
+    def getImageIds(self, sessionid, albumId):
         """
         returns list of imageids for the given albumId
         """
@@ -292,9 +312,9 @@ if __name__ == "__main__":
         print "upload image failed"
 
     
-    print "getimages"
-    images = sm1.getImages(sessionid, 3167690)
-    print "images: " + str(images)
+    print "getimageids"
+    images = sm1.getImagesIds(sessionid, 3167690)
+    print "imageids: " + str(images)
     
     print "getimageinfo ---------------------------------------"
     imgInfo = sm1.getImageInfo(sessionid, images[0])
