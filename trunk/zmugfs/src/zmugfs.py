@@ -78,6 +78,17 @@ class ZmugFS(Fuse):
         self._nodes_by_path = {}
         self._indexTree()
 
+    def _inode_from_image(self, image):
+        st = MyStat()
+        st.st_mode = stat.S_IFREG | 0744
+        st.st_ino = image['id']
+        st.st_nlink = 0
+        st.st_atime = int(time.time()) # no time from smugmug available
+        st.st_mtime = int(time.time()) # image['LastUpdated']
+        st.st_ctime = int(time.time()) # image['Date']
+        st.st_size = image['Size']
+        return st
+
     def _inode_from_category(self, cat):
         st = MyStat()
         st.st_mode = stat.S_IFDIR | 0755
@@ -127,11 +138,6 @@ class ZmugFS(Fuse):
         sessionid = sm.loginWithPassword(self._config['smugmug.username'],
                                          self._config['smugmug.password'])
         tree = sm.getTree(sessionid, 1)
-        #treeIdx = TreeIndex(tree)
-        #n = treeIdx.find_best_node("/Children/Birthday")
-        #print str(n)
-        #rootNode = Node('/', self.getattr('/'), tree.children())
-        #self._nodes_by_path['/'] = rootNode
 
         for cat in tree.children():
             catpath = '/' + cat.name
@@ -152,6 +158,15 @@ class ZmugFS(Fuse):
                     self._nodes_by_path[apath] = anode
                     self._nodes_by_path[subpath].children.append(anode)
                     print "%s: after adding child: %s" % (subpath, len(self._nodes_by_path[subpath].children))
+                    # get all of the image information we need to avoid making
+                    # n + 1 trips
+                    images = sm.getImages(sessionid, album['id'])
+                    for image in images:
+                        ipath = apath + '/' + image['FileName']
+                        imgnode = self._create_node(image, '/' + image['FileName'])
+                        self._nodes_by_path[ipath] = imgnode
+                        self._nodes_by_path[apath].children.append(imgnode)
+                        
             for album in cat.albums:
                 apath = catpath + '/' + album['Title']
                 print "album path: [" + apath + "]"
@@ -159,6 +174,14 @@ class ZmugFS(Fuse):
                 self._nodes_by_path[apath] = anode
                 self._nodes_by_path[catpath].children.append(anode)
                 print "%s: after adding child: %s" % (catpath, len(self._nodes_by_path[catpath].children))
+                # get all of the image information we need to avoid making
+                # n + 1 trips
+                images = sm.getImages(sessionid, album['id'])
+                for image in images:
+                    ipath = apath + '/' + image['FileName']
+                    imgnode = self._create_node(image, '/' + image['FileName'])
+                    self._nodes_by_path[ipath] = imgnode
+                    self._nodes_by_path[apath].children.append(imgnode)
             
         sm.logout(sessionid)
 
@@ -175,7 +198,7 @@ class ZmugFS(Fuse):
         elif isinstance(item, sm_json.Category):
             node = Node(path, self._inode_from_category(item))
         else:
-            node = Node(path, self._inode_from_category(item))
+            node = Node(path, self._inode_from_image(item))
 
         return node
 
@@ -228,11 +251,6 @@ class ZmugFS(Fuse):
         for n in node.get_nodes():
             print "would return (%s) for path (%s)" % (n.path, path)
             yield fuse.Direntry(n.path.strip('/').encode('ascii'))
-
-        #f = ['foo', 'bar', 'path', 'cheese']
-        #print f
-        #for i in f:
-        #    yield fuse.Direntry(i)
 
     def read(self, path, size, offset):
         print "read (%s): %d:%d)" % (str(path), int(size), int(offset))
