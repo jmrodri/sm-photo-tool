@@ -183,6 +183,12 @@ class Smugmug:
         #    * 4 - "invalid user (message)"
         #    * 5 - "system error"
         return Image(rsp['Image'])
+
+    def getImageUrls(self, sessionid, imageId):
+        rsp = self.sm.smugmug.images.getURLs(SessionID=sessionid,ImageID=imageId)
+        rsp = simplejson.loads(rsp)
+        print rsp
+        return Image(rsp['Image'])
        
     def getImages(self, sessionid, albumId, heavy=1):
         """
@@ -306,14 +312,14 @@ if __name__ == "__main__":
     else:
         print "this album is PRIVATE"
     
-    try:
-        sm1.uploadImage(sessionid, albumid, "test.jpg")    
-    finally:
-        print "upload image failed"
+    #try:
+    #    sm1.uploadImage(sessionid, albumid, "test.jpg")    
+    #finally:
+    #    print "upload image failed"
 
     
     print "getimageids"
-    images = sm1.getImagesIds(sessionid, 3167690)
+    images = sm1.getImageIds(sessionid, 3167690)
     print "imageids: " + str(images)
     
     print "getimageinfo ---------------------------------------"
@@ -322,6 +328,10 @@ if __name__ == "__main__":
     print "TinyURL = " + imgInfo['TinyURL']
     print "imageid = " + str(imgInfo['id'])
     print "albumId = " + str(imgInfo['Album']['id'])
+
+    print "getimageurls ---------------------------------------"
+    urls = sm1.getImageUrls(sessionid, images[0])
+    print urls['ThumbURL']
 
     rc = sm1.deleteAlbum(sessionid, albumid)
     if rc:
