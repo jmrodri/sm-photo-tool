@@ -115,7 +115,7 @@ class _Method:
         #print "args: " + str(args)
         return self.__send(self.__name, args)
 
-class SmJSON:
+class ZmugJSON:
     def __init__(self,version="1.2.1"):
         self.url="https://api.smugmug.com/services/api/json/%s/" % str(version)
         self.apikey="4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ"
@@ -149,11 +149,11 @@ class Exception:
         return "%s: %s" % (str(self.code), str(self.msg))
     
 #####################################################################
-# Smugmug API wrapper, uses SmJSON as the RPC proxy
+# Smugmug API wrapper, uses ZmugJSON as the RPC proxy
 #####################################################################
 class Smugmug:
     def __init__(self):
-        self.sm = SmJSON("1.2.1")
+        self.sm = ZmugJSON("1.2.1")
     
     def loginWithPassword(self, username, password):
         rsp = self.sm.smugmug.login.withPassword(EmailAddress=username,
@@ -290,7 +290,7 @@ class Smugmug:
 # MAIN
 #####################################################################
 if __name__ == "__main__":
-    config = Config('/etc/sm_json/sm_json.conf', '.smjsonrc')
+    config = Config('/etc/zmugjson/zmugjson.conf', '.zmugjsonrc')
     sm1 = Smugmug()
     sessionid = sm1.loginWithPassword(config.get_property('smugmug.username'),
                                       config.get_property('smugmug.password'))
