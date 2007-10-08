@@ -2,7 +2,7 @@ import fuse
 from fuse import Fuse
 from datetime import *
 import os, stat, errno, time
-import sm_json
+import zmugjson
 from config import Config
 
 fuse.fuse_python_api = (0, 2)
@@ -134,7 +134,7 @@ class ZmugFS(Fuse):
                 return self._nodes_by_path[p]
 
     def _indexTree(self):
-        sm = sm_json.Smugmug()
+        sm = zmugjson.Smugmug()
         sessionid = sm.loginWithPassword(self._config['smugmug.username'],
                                          self._config['smugmug.password'])
         tree = sm.getTree(sessionid, 1)
@@ -193,9 +193,9 @@ class ZmugFS(Fuse):
     def _create_node(self, item, path):
         node = None
 
-        if isinstance(item, sm_json.Album):
+        if isinstance(item, zmugjson.Album):
             node = Node(path, self._inode_from_album(item))
-        elif isinstance(item, sm_json.Category):
+        elif isinstance(item, zmugjson.Category):
             node = Node(path, self._inode_from_category(item))
         else:
             node = Node(path, self._inode_from_image(item))
@@ -282,7 +282,7 @@ class ZmugFS(Fuse):
         self._inodes[path] = st
 
         """
-        sm = sm_json.Smugmug()
+        sm = zmugjson.Smugmug()
         sessionid = sm.loginWithPassword(self._config['smugmug.username'],
                                          self._config['smugmug.password'])
         sm.createAlbum(sessionid, path, Public=0)
