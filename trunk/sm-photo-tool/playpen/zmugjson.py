@@ -143,10 +143,10 @@ class ZmugJSON:
 class Exception:
     def __init__(self, code, msg):
         self.code = code
-        self.msg = msg
+        self.message = msg
         
     def __str__(self):
-        return "%s: %s" % (str(self.code), str(self.msg))
+        return "%s: %s" % (str(self.code), str(self.message))
     
 #####################################################################
 # Smugmug API wrapper, uses ZmugJSON as the RPC proxy
@@ -154,11 +154,12 @@ class Exception:
 class Smugmug:
     def __init__(self):
         self.sm = ZmugJSON("1.2.1")
+        self.key = "4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ"
     
     def loginWithPassword(self, username, password):
         rsp = self.sm.smugmug.login.withPassword(EmailAddress=username,
                                       Password=password,
-                                      APIKey="4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ")
+                                      APIKey=self.key)
         session = simplejson.loads(rsp)
         # TODO: handle error cases
         #    * 1 - "invalid login"
@@ -168,10 +169,23 @@ class Smugmug:
             return session['Login']['Session']['id']
         else:
             raise Exception(session['code'], session['message'])
+
+    def loginAnonymously(self):
+        rsp = self.sm.smugmug.login.anonymously(APIKey=self.key)
+        session = simplejson.loads(rsp)
+        if session['stat'] == "ok":
+            return session['Login']['Session']['id']
+        else:
+            raise Exception(session['code'], session['message'])
+        
     
     def logout(self, sessionid):
         rsp = self.sm.smugmug.logout(SessionID=sessionid)
         rsp = simplejson.loads(rsp)
+
+        if rsp['stat'] == "fail":
+            raise Exception(rsp['code'], rsp['message'])
+
         # TODO: handle error cases
         #    * 3 - "invalid session"
         #    * 5 - "system error"
