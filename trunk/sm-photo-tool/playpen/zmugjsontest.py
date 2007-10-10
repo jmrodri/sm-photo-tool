@@ -3,6 +3,26 @@ import zmugjson
 import sys
 from config import Config
 
+class TestTree(unittest.TestCase):
+    def testTree(self):
+        tree = zmugjson.Tree()
+        self.assertEquals(0, len(tree.children()))
+
+class TestCategory(unittest.TestCase):
+    def testCategory(self):
+        cat = zmugjson.Category(10, "foo")
+        self.assertEquals(10, cat.id)
+        self.assertEquals("foo", cat.name)
+        self.assertEquals(0, len(cat.albums))
+        self.assertEquals(0, len(cat.categories))
+        self.assertEquals(cat.children(), cat.categories + cat.albums)
+
+#class TestAlbum(unittest.TestCase):
+#    def testAlbum(self):
+#        album = zmugjson.Album("foo")
+#        self.assertEquals("foo", album.name)
+#        self.assertEquals(None, album.children())
+
 class TestSmugmug(unittest.TestCase):
 
     def setUp(self):
