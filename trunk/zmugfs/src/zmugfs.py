@@ -43,33 +43,6 @@ class Node(object):
     def add_node(self, node):
         self.children.append(node)
 
-#class TreeIndex(object):
-#    def __init__(self, tree):
-#        self.tree = tree
-#        self.nodes_by_path = {}
-#        self.child_to_parent_map = {}
-#        self.depth_map = {}
-#        self.node_levels = []
-#        self._indexTree()
-#
-#    def _indexTree(self):
-#        depth = 0
-#        nodesAtCurrentDepth = self.tree.children()
-#        self.node_levels.insert(depth, nodesAtCurrentDepth)
-#
-#        for n in nodesAtCurrentDepth:
-#            self._indexCat(n, depth + 1)
-#
-#    def _indexCat(self, node, depth):
-#        self.depth_map[node] = depth
-#        current_depth = node.children()
-#        self.node_levels.insert(depth, current_depth)
-#        self.nodes_by_path[node.path] = node
-#        for n in current_depth:
-#            self.child_to_parent_map[n] = node
-#            self._indexCat(n, depth + 1)
-
-        
 class ZmugFS(Fuse):
     """
     Need to implement Fuse api
