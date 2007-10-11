@@ -9,10 +9,9 @@ import httplib
 
 fuse.fuse_python_api = (0, 2)
 
-def _convert_date(dt):
-    ds = dt.replace(' ', '-').replace(':', '-').split('-')
-    d = map(int, ds) # convert all strings in ds to ints
-    return datetime(d[0], d[1], d[2], d[3], d[4], d[5])
+def _convert_date(datestr):
+    # smugmug returns date in the following format: "%Y-%m-%d %H:%M:%S"
+    return int(time.mktime(time.strptime(datestr, "%Y-%m-%d %H:%M:%S")))
 
 class MyStat(fuse.Stat):
     def __init__(self):
@@ -20,8 +19,9 @@ class MyStat(fuse.Stat):
         self.st_mode = 0
         self.st_ino = 0
         self.st_nlink = 0
-        self.st_uid = 0
-        self.st_gid = 0
+        # default user and groupid to the user running the program
+        self.st_uid = os.getuid()
+        self.st_gid = os.getgid()
         self.st_size = 0
         self.st_atime = 0
         self.st_mtime = 0
@@ -59,9 +59,10 @@ class ZmugFS(Fuse):
         st.st_mode = stat.S_IFREG | 0644
         st.st_ino = image['id']
         st.st_nlink = 0
-        st.st_atime = int(time.time()) # no time from smugmug available
-        st.st_mtime = int(time.time()) # image['LastUpdated']
-        st.st_ctime = int(time.time()) # image['Date']
+        # no atime from smugmug available, use last updated
+        st.st_atime = _convert_date(image['LastUpdated'])
+        st.st_mtime = _convert_date(image['LastUpdated'])
+        st.st_ctime = _convert_date(image['Date'])
         st.st_size = image['Size']
         return st
 
@@ -85,11 +86,10 @@ class ZmugFS(Fuse):
         st.st_mode = stat.S_IFDIR | 0755
         st.st_ino = album['id']
         st.st_nlink = 0
-        st.st_atime = int(time.time()) # no time from smugmug available
-        st.st_mtime = int(time.time()) # no time from smugmug available
-        st.st_ctime = int(time.time()) # no time from smugmug available
-        #st.st_mtime = _convert_date(album['LastUpdated']).time()
-        #st.st_ctime = _convert_date(album['LastUpdated']).time()
+        # no atime from smugmug available, use last updated
+        st.st_atime = _convert_date(album['LastUpdated'])
+        st.st_mtime = _convert_date(album['LastUpdated'])
+        st.st_ctime = _convert_date(album['LastUpdated'])
         st.st_size = album['ImageCount']
         return st
 
