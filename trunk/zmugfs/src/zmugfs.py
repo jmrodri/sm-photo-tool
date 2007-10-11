@@ -83,7 +83,7 @@ class ZmugFS(Fuse):
 
     def _inode_from_image(self, image):
         st = MyStat()
-        st.st_mode = stat.S_IFREG | 0744
+        st.st_mode = stat.S_IFREG | 0644
         st.st_ino = image['id']
         st.st_nlink = 0
         st.st_atime = int(time.time()) # no time from smugmug available
