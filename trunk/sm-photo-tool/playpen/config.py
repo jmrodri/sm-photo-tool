@@ -26,19 +26,23 @@ class Config:
         if os.path.isfile(config):
             f = open(config, "r")
             while f:
-                line = f.readline()
+                rawline = f.readline()
+                line = rawline.strip()
                 if len(line) == 0:
                     break
-                pairs = line.strip().split('=')
+                if line[0] == "#":
+                    # ignore comment lines
+                    continue
+                pairs = line.split('=')
                 self._config[pairs[0]] = pairs[1]
         else:
             print "can't find " + str(config)
 
-    def get_int(self, property):
-        return int(self.get_property(property))
+    def get_int(self, property, default=0):
+        return int(self.get_property(property, default))
 
-    def get_property(self, property):
-        return self.__getitem__(property)
+    def get_property(self, property, default=None):
+        return self._config.get(property, default)
 
     def set_property(self, name, value):
         self.__setitem__(name, value)
