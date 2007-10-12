@@ -1,0 +1,39 @@
+                                DRAFT
+
+IMAGE CACHE
+------------
+There is a performance problem when reading images from zmugfs.
+
+open() is implemented as follows:
+  * login to smugmug
+  * get urls of imageid
+  * open httpconnection to img url
+  * read data
+  * store data in dict with path to filename as key
+
+read()
+  * find imgdata in dict
+  * return section of imgdata based on offset and size params
+
+release()
+  * remove imgdata from dict
+
+The release method is what causes the performance issue because next
+go round we have to fetch the image data again. One option is to 
+leave them in the dict the entire time, but we'll run out of memory
+fast with imgdata around the 2MB range * 100 images and you're already
+at 200MB.
+
+One option is to limit the number of images we keep in memory. I think
+a sensible default would be 5 - 10 which is about 10 - 20 MB.
+
+Then on disk we could store more say 100MB or 50 images. The location
+of the cache would be $HOME/.zmugfs/cache.
+
+Now for configuration items. The configuration file will have two (2)
+new keys:
+
+image.disk.cache= in megabytes
+image.memory.cache=? (right now it'll be number of images)
+
+                                DRAFT
