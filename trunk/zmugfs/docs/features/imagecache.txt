@@ -36,4 +36,5 @@ new keys:
 image.disk.cache= in megabytes
 image.memory.cache=? (right now it'll be number of images)
 
+
                                 DRAFT
