@@ -118,11 +118,7 @@ class _Method:
 class ZmugJSON:
     def __init__(self,version="1.2.1"):
         self.url="https://api.smugmug.com/services/api/json/%s/" % str(version)
-        self.apikey="4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ"
         print self.url
-
-    def __addKey(self, call):
-        return call + "&APIKey=" + self.apikey
 
     def __getattr__(self, name):
         # magic method dispatcher
@@ -134,7 +130,6 @@ class ZmugJSON:
         call = self.url + "?method="+ str(method)
         for k, v in args.iteritems():
             call = call + "&" + str(k) + "=" + str(v)
-        #call = self.__addKey(call)
         print call
         rsp = urllib.urlopen(call).read()
         print "urlopen returned: " + str(rsp)
@@ -152,9 +147,9 @@ class Exception:
 # Smugmug API wrapper, uses ZmugJSON as the RPC proxy
 #####################################################################
 class Smugmug:
-    def __init__(self):
+    def __init__(self,key):
         self.sm = ZmugJSON("1.2.1")
-        self.key = "4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ"
+        self.key = key
     
     def loginWithPassword(self, username, password):
         rsp = self.sm.smugmug.login.withPassword(EmailAddress=username,
@@ -311,7 +306,7 @@ class Smugmug:
 #####################################################################
 if __name__ == "__main__":
     config = Config('/etc/zmugjson/zmugjson.conf', '.zmugjsonrc')
-    sm1 = Smugmug()
+    sm1 = Smugmug("4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ")
     sessionid = sm1.loginWithPassword(config.get_property('smugmug.username'),
                                       config.get_property('smugmug.password'))
     print "Smugmug returned: " + str(sessionid)
@@ -321,6 +316,7 @@ if __name__ == "__main__":
     print "getalbuminfo"
     albuminfo = sm1.getAlbumInfo(sessionid, albumid)
     print "albuminfo: " + str(albuminfo)
+    print "lastupdated: " + str(albuminfo['LastUpdated'])
     if albuminfo['Public']:
         print "this album is Public"
     else:
@@ -340,6 +336,8 @@ if __name__ == "__main__":
     imgInfo = sm1.getImageInfo(sessionid, images[0])
     print "imageinfo: " + str(imgInfo)
     print "TinyURL = " + imgInfo['TinyURL']
+    print "lastupdate = " + imgInfo['LastUpdated']
+    print "date = " + imgInfo['Date']
     print "imageid = " + str(imgInfo['id'])
     print "albumId = " + str(imgInfo['Album']['id'])
 
