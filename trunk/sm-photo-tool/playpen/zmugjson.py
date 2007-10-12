@@ -4,12 +4,12 @@ import md5
 from time import time
 import simplejson
 from config import Config
-#from elementtree.ElementTree import ElementTree
+import logging
+import logging.config
 
-#url?method=<name>&param1=value1....
-#
-#map = {param1=>value1,param2=>value2}
-#Smugmug.method(map)
+# configure the logging system for the module
+logging.config.fileConfig("logger.conf")
+log = logging.getLogger("zmugjson")
 
 def filename_get_data(name):
   f = file(name,"rb")
@@ -25,10 +25,8 @@ class BaseDict:
         self.data = data
         
     def __setitem__(self, key, value):
-        #print "__setitem__(%s:%s)" % (key,value)
         self.data[key] = value
     def __getitem__(self, key):
-        #print "__getitem__(%s)" % (key)
         return self.data[key]
     def __str__(self):
         return str(self.data)
@@ -111,28 +109,26 @@ class _Method:
     def __getattr__(self, name):
         return _Method(self.__send, "%s.%s" % (self.__name, name))
     def __call__(self, **args):
-        #print "__name: %s" % self.__name
-        #print "args: " + str(args)
         return self.__send(self.__name, args)
 
 class ZmugJSON:
     def __init__(self,version="1.2.1"):
         self.url="https://api.smugmug.com/services/api/json/%s/" % str(version)
-        print self.url
+        log.debug(self.url)
 
     def __getattr__(self, name):
         # magic method dispatcher
-        #print "__getattr__(%s)" % name
+        #log.debug("__getattr__(%s)" % name)
         return _Method(self.__invoke, name)
 
     def __invoke(self, method, args):
-        #print "invoke.args: " + str(args)
+        #log.debug("invoke.args: " + str(args))
         call = self.url + "?method="+ str(method)
         for k, v in args.iteritems():
             call = call + "&" + str(k) + "=" + str(v)
-        print call
+        log.debug(call)
         rsp = urllib.urlopen(call).read()
-        print "urlopen returned: " + str(rsp)
+        log.debug("urlopen returned: " + str(rsp))
         return rsp
             
 class Exception:
@@ -196,7 +192,7 @@ class Smugmug:
     def getImageUrls(self, sessionid, imageId):
         rsp = self.sm.smugmug.images.getURLs(SessionID=sessionid,ImageID=imageId)
         rsp = simplejson.loads(rsp)
-        print rsp
+        log.debug(rsp)
         return Image(rsp['Image'])
        
     def getImages(self, sessionid, albumId, heavy=1):
@@ -210,7 +206,7 @@ class Smugmug:
         #    * 4 - "invalid user (message)"
         #    * 5 - "system error"
         #    * 15 - "empty set"
-        print rsp
+        log.debug(rsp)
         if rsp['stat'] == "fail":
             if rsp['code'] == 15:
                 return [] # empty list
@@ -230,7 +226,7 @@ class Smugmug:
         #    * 4 - "invalid user (message)"
         #    * 5 - "system error"
         #    * 15 - "empty set"
-        print rsp
+        log.debug(rsp)
         return [img['id'] for img in rsp['Images']] # list of ids
     
     def getAlbumInfo(self, sessionid, albumId):
@@ -271,7 +267,7 @@ class Smugmug:
     
     def uploadImage(self, sessionid, albumid, filename):
         imageid = 0
-        print "uploadImage -----------------------------------------------------"
+        log.debug("uploadImage -----------------------------------------------------")
         
         data = filename_get_data(filename)
         headers = {
@@ -290,14 +286,14 @@ class Smugmug:
         response = conn.getresponse()
         print response.status, response.reason
         rsp = response.read()
-        print rsp
+        log.debug(rsp)
         rsp = simplejson.loads(rsp)
 
         if rsp.has_key('stat') and rsp['stat'] == "ok":
-            print "we're ok"
+            log.debug("we're ok")
             imageid = rsp['Image']['id']
         conn.close()
-        print "uploadImage -------------------------------------------------"
+        log.debug("uploadImage -------------------------------------------------")
         return imageid
         
         
@@ -309,73 +305,58 @@ if __name__ == "__main__":
     sm1 = Smugmug("4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ")
     sessionid = sm1.loginWithPassword(config.get_property('smugmug.username'),
                                       config.get_property('smugmug.password'))
-    print "Smugmug returned: " + str(sessionid)
-    print "createalbum"
+    log.debug("Smugmug returned: " + str(sessionid))
+    log.info("createalbum -------------------------------")
     albumid = sm1.createAlbum(sessionid, "testalbum" + str(time()), Public=0)
-    print "albumid: " + str(albumid)
-    print "getalbuminfo"
+    log.debug("albumid: " + str(albumid))
+    log.info("getalbuminfo -------------------------------")
     albuminfo = sm1.getAlbumInfo(sessionid, albumid)
-    print "albuminfo: " + str(albuminfo)
-    print "lastupdated: " + str(albuminfo['LastUpdated'])
+    log.debug("albuminfo: " + str(albuminfo))
+    log.debug("lastupdated: " + str(albuminfo['LastUpdated']))
     if albuminfo['Public']:
-        print "this album is Public"
+        log.debug("this album is Public")
     else:
-        print "this album is PRIVATE"
+        log.debug("this album is PRIVATE")
     
     #try:
     #    sm1.uploadImage(sessionid, albumid, "test.jpg")    
     #finally:
-    #    print "upload image failed"
+    #    log.debug("upload image failed")
 
     
-    print "getimageids"
+    log.info("getimageids -------------------------------")
     images = sm1.getImageIds(sessionid, 3167690)
-    print "imageids: " + str(images)
+    log.debug("imageids: " + str(images))
     
-    print "getimageinfo ---------------------------------------"
+    log.info("getimageinfo ---------------------------------------")
     imgInfo = sm1.getImageInfo(sessionid, images[0])
-    print "imageinfo: " + str(imgInfo)
-    print "TinyURL = " + imgInfo['TinyURL']
-    print "lastupdate = " + imgInfo['LastUpdated']
-    print "date = " + imgInfo['Date']
-    print "imageid = " + str(imgInfo['id'])
-    print "albumId = " + str(imgInfo['Album']['id'])
+    log.debug("imageinfo: " + str(imgInfo))
+    log.debug("TinyURL = " + imgInfo['TinyURL'])
+    log.debug("lastupdate = " + imgInfo['LastUpdated'])
+    log.debug("date = " + imgInfo['Date'])
+    log.debug("imageid = " + str(imgInfo['id']))
+    log.debug("albumId = " + str(imgInfo['Album']['id']))
 
-    print "getimageurls ---------------------------------------"
+    log.info("getimageurls ---------------------------------------")
     urls = sm1.getImageUrls(sessionid, images[0])
-    print urls['ThumbURL']
+    log.debug(urls['ThumbURL'])
 
     rc = sm1.deleteAlbum(sessionid, albumid)
     if rc:
-        print "album (%d) deleted" % albumid
+        log.debug("album (%d) deleted" % albumid)
     else:
-        print "could not delete album (%d)" % albumid
-    print "gettree ------------------------------------------"
+        log.debug("could not delete album (%d)" % albumid)
+    log.info("gettree ------------------------------------------")
     tree = sm1.getTree(sessionid, 1)
-    print tree.print_tree()
-    """
-    for cat in rc:
-        print "Category: (%s:%s) path:(/%s)" % (str(cat['id']), str(cat['Name']), str(cat['Name']))
-        if cat.has_key('SubCategories'):
-            for subcat in cat['SubCategories']:
-                print "\tSubcat: (%s:%s) path:(/%s/%s)" % (str(subcat['id']), str(subcat['Name']), str(cat['Name']), str(subcat['Name']))
-                #print subcat
-                for album in subcat['Albums']:
-                    print "\t\tAlbum: (%s:%s) path:(/%s/%s/%s)" % (str(album['id']), str(album['Title']), str(cat['Name']), str(subcat['Name']), str(album['Title']))
-                    #print album
-        if cat.has_key('Albums'):
-            for album in cat['Albums']:
-                print "\tAlbum: (%s:%s) path:(/%s/%s)" % (str(album['id']), str(album['Title']), str(cat['Name']), str(album['Title']))
-                #print album
-    """
+    #tree.print_tree()
     
-    print "logout -------------------------------------------"
+    log.info("logout -------------------------------------------")
     rc = sm1.logout(sessionid)
-    print "logout returned: " + str(rc)
+    log.debug("logout returned: " + str(rc))
     
     classobj = eval("Image")
     classinstance = classobj()
-    print classinstance.__class__
+    log.debug(classinstance.__class__)
 
-    print type(classinstance)
-    print dir(classinstance)
+    log.debug(type(classinstance))
+    log.debug(dir(classinstance))
