@@ -5,12 +5,17 @@ import os, stat, errno, time
 import zmugjson
 from config import Config
 import logging
+import logging.config
 import httplib
 
 fuse.fuse_python_api = (0, 2)
 
 # smugmug api key which identifies this application
 apikey = "xbBmfRgR1whEAOv9QRh687GGP6Ow0IM6"
+
+# configure the logging system for the module
+logging.config.fileConfig("logger.conf")
+log = logging.getLogger("zmugfs")
 
 def _convert_date(datestr):
     # smugmug returns date in the following format: "%Y-%m-%d %H:%M:%S"
@@ -56,6 +61,22 @@ class ZmugFS(Fuse):
         self._config = Config('/etc/zmugfs/zmugfs.conf', '.zmugfsrc')
         self._nodes_by_path = {}
         self._indexTree()
+        self._imgdata_by_path = {}
+
+    #
+    # should probably find a cleaner way to group the
+    # _inode_from_xxx methods
+    #
+    def _inode_from_root(self):
+        st = MyStat()
+        st.st_mode = stat.S_IFDIR | 0755
+        st.st_ino = 0
+        st.st_nlink = 0
+        st.st_atime = int(time.time())
+        st.st_mtime = int(time.time())
+        st.st_ctime = int(time.time())
+        st.st_size = 0
+        return st
 
     def _inode_from_image(self, image):
         st = MyStat()
@@ -118,25 +139,31 @@ class ZmugFS(Fuse):
                                          self._config['smugmug.password'])
         tree = sm.getTree(sessionid, 1)
 
+        # handle the root node case
+
+        self._nodes_by_path['/'] = Node('/', 0, self._inode_from_root())
+
         for cat in tree.children():
             catpath = '/' + cat.name
-            logging.warning("cat path: [" + catpath + "]")
-            self._nodes_by_path[catpath] = self._create_node(cat, catpath)
-            logging.warning("before adding children: %s" % len(self._nodes_by_path[catpath].children))
+            log.debug("cat path: [" + catpath + "]")
+            catnode = self._create_node(cat, catpath)
+            self._nodes_by_path[catpath] = catnode
+            self._nodes_by_path['/'].children.append(catnode)
+            log.debug("before adding children: %s" % len(self._nodes_by_path[catpath].children))
             for subcat in cat.categories:
                 subpath = catpath + '/' + subcat.name
-                logging.warning("subcat path: [" + subpath + "]")
+                log.debug("subcat path: [" + subpath + "]")
                 snode = self._create_node(subcat, '/' + subcat.name)
                 self._nodes_by_path[subpath] = snode
                 self._nodes_by_path[catpath].children.append(snode)
-                logging.warning("%s: after adding child: %s" % (catpath, len(self._nodes_by_path[catpath].children)))
+                log.debug("%s: after adding child: %s" % (catpath, len(self._nodes_by_path[catpath].children)))
                 for album in subcat.albums:
                     apath = subpath + '/' + album['Title']
-                    logging.warning("album path: [" + apath + "]")
+                    log.debug("album path: [" + apath + "]")
                     anode = self._create_node(album, '/' + album['Title'])
                     self._nodes_by_path[apath] = anode
                     self._nodes_by_path[subpath].children.append(anode)
-                    logging.warning("%s: after adding child: %s" % (subpath, len(self._nodes_by_path[subpath].children)))
+                    log.debug("%s: after adding child: %s" % (subpath, len(self._nodes_by_path[subpath].children)))
                     # get all of the image information we need to avoid making
                     # n + 1 trips
                     images = sm.getImages(sessionid, album['id'])
@@ -148,11 +175,11 @@ class ZmugFS(Fuse):
                         
             for album in cat.albums:
                 apath = catpath + '/' + album['Title']
-                logging.warning("album path: [" + apath + "]")
+                log.debug("album path: [" + apath + "]")
                 anode = self._create_node(album, '/' + album['Title'])
                 self._nodes_by_path[apath] = anode
                 self._nodes_by_path[catpath].children.append(anode)
-                logging.warning("%s: after adding child: %s" % (catpath, len(self._nodes_by_path[catpath].children)))
+                log.debug("%s: after adding child: %s" % (catpath, len(self._nodes_by_path[catpath].children)))
                 # get all of the image information we need to avoid making
                 # n + 1 trips
                 images = sm.getImages(sessionid, album['id'])
@@ -164,10 +191,11 @@ class ZmugFS(Fuse):
             
         sm.logout(sessionid)
 
-        logging.warning("begin nodes by path -----------------------------------")
+        # DEBUG CODE
+        log.debug("begin nodes by path -----------------------------------")
         for k in self._nodes_by_path.keys():
-            logging.warning(k)
-        logging.warning("end nodes by path -----------------------------------")
+            log.debug(k)
+        log.debug("end nodes by path -----------------------------------")
 
     def _create_node(self, item, path):
         node = None
@@ -185,29 +213,12 @@ class ZmugFS(Fuse):
         """
         we need an inode cache for the files we have.
         """
-        logging.warning("getattr [" + str(path) + "]")
-        st = MyStat()
-        if path == '/':
-            st.st_mode = stat.S_IFDIR | 0755
-            st.st_ino = 2
-            st.st_nlink = 1
-            st.st_atime = int(time.time())
-            st.st_mtime = int(time.time())
-            st.st_ctime = int(time.time())
-        elif path == '/foobar':
-            st.st_mode = stat.S_IFREG | 0444
-            st.st_nlink = 1
-            st.st_atime = int(time.time())
-            st.st_mtime = int(time.time())
-            st.st_ctime = int(time.time())
-            st.st_size = len(path)
-        elif self._nodes_by_path.has_key(path):
-            logging.warning("returnining inode for (%s)" % str(path))
+        log.debug("getattr [" + str(path) + "]")
+        if self._nodes_by_path.has_key(path):
+            log.debug("returning inode for (%s)" % str(path))
             return self._nodes_by_path[path].inode
         else:
             return -errno.ENOENT
-
-        return st
 
     #def opendir(self, path):
     #    # prepare a directory for reading
@@ -223,65 +234,103 @@ class ZmugFS(Fuse):
     
     def readdir(self, path, offset):
         # read the next directory entry
-        logging.warning("readdir (%s) (%d)" % (str(path), int(offset)))
+        log.debug("readdir (%s) (%d)" % (str(path), int(offset)))
 
         node = self._nodes_by_path[path]
 
         for n in node.get_nodes():
-            logging.warning("would return (%s) for path (%s)" % (n.path, path))
+            log.debug("would return (%s) for path (%s)" % (n.path, path))
             yield fuse.Direntry(n.path.strip('/').encode('ascii'))
 
-    def read(self, path, size, offset):
-        logging.warning("read (%s): %d:%d)" % (str(path), int(size), int(offset)))
+    def open(self, path, flags):
+        log.debug("open (%s): flags = %s" % (str(path), str(flags)))
         node = self._nodes_by_path[path]
 
-        sm = zmugjson.Smugmug(apikey)
-        sessionid = sm.loginWithPassword(self._config['smugmug.username'],
-                                         self._config['smugmug.password'])
-        urls = sm.getImageUrls(sessionid, node.id);
-        sm.logout(sessionid)
+        # um what the heck are you looking for?
+        if node == None:
+            return -errno.ENOENT
 
-        parts = urls['ThumbURL'].split('/')
-        conn = httplib.HTTPConnection(parts[2])
-        conn.request("GET",  '/' + '/'.join(parts[3:]))
-        resp = conn.getresponse()
-        imgdata = resp.read()
-        conn.close()
-        return imgdata
+        # see if we already got it
+        if not self._imgdata_by_path.has_key(path):
+            sm = zmugjson.Smugmug(apikey)
+            sessionid = sm.loginWithPassword(self._config['smugmug.username'],
+                                             self._config['smugmug.password'])
+            urls = sm.getImageUrls(sessionid, node.id);
+            sm.logout(sessionid)
 
-    def mkdir(self, path, mode):
-        logging.warning("mkdir: (%s): (%o)" % (str(path), mode))
-        logging.warning("create gallery (%s) on smugmug" % str(path))
+            parts = urls['OriginalURL'].split('/')
+            conn = httplib.HTTPConnection(parts[2])
+            conn.request("GET",  '/' + '/'.join(parts[3:]))
+            resp = conn.getresponse()
+            imgdata = resp.read()
+            conn.close()
 
-        # split the path along the '/'.  the last one is
-        # an album. The other levels are categories.
-        dirs = path.split('/')
-        logging.warning(dirs)
+            self._imgdata_by_path[path] = imgdata
 
-        # get the octal of the mode to see if the album
-        # should be public or not. Need to define a
-        # whether g+r makes it public or not. u+r only
-        # makes it private
-        omode = oct(mode)
+    def read(self, path, size, offset):
+        log.debug("read (%s): %d:%d)" % (str(path), int(size), int(offset)))
+        imgdata = self._imgdata_by_path[path]
+        imglen = len(imgdata)
+        if offset < imglen:
+            if offset + size > imglen:
+                size = imglen - offset
+            buf = imgdata[offset:offset+size]
+        else:
+            buf = ''
+        return buf
 
-        # add inode
-        st = MyStat()
-        st.st_mode = stat.S_IFDIR | mode
-        st.st_ino = 2
-        st.st_nlink = 1
-        st.st_atime = int(time.time())
-        st.st_mtime = int(time.time())
-        st.st_ctime = int(time.time())
-        self._inodes[path] = st
+    #def flush(self, path, flags):
+    #    log.debug("flush (%s): flags = %s" % (str(path), str(flags)))
+    #    # we're done with the file for now. Figure out a better way
+    #    # to cache images in the future.
+    #    if self._imgdata_by_path(path):
+    #        self._imgdata_by_path[path] = None
 
-        """
-        sm = zmugjson.Smugmug()
-        sessionid = sm.loginWithPassword(self._config['smugmug.username'],
-                                         self._config['smugmug.password'])
-        sm.createAlbum(sessionid, path, Public=0)
-        sm.logout(sessionid)
-        """
-        return -errno.ENOSYS
+    def release(self, path, flags):
+        log.debug("release (%s): flags = %s" % (str(path), str(flags)))
+        # we're done with the file for now. Figure out a better way
+        # to cache images in the future.
+        if self._imgdata_by_path.has_key(path) and self._imgdata_by_path[path]:
+            del self._imgdata_by_path[path]
+
+
+#
+#    comment out mkdir for now, as we're only going to support
+#    readonly version at first.
+#
+#    def mkdir(self, path, mode):
+#        log.warning("mkdir: (%s): (%o)" % (str(path), mode))
+#        log.warning("create gallery (%s) on smugmug" % str(path))
+#
+#        # split the path along the '/'.  the last one is
+#        # an album. The other levels are categories.
+#        dirs = path.split('/')
+#        log.warning(dirs)
+#
+#        # get the octal of the mode to see if the album
+#        # should be public or not. Need to define a
+#        # whether g+r makes it public or not. u+r only
+#        # makes it private
+#        omode = oct(mode)
+#
+#        # add inode
+#        st = MyStat()
+#        st.st_mode = stat.S_IFDIR | mode
+#        st.st_ino = 2
+#        st.st_nlink = 1
+#        st.st_atime = int(time.time())
+#        st.st_mtime = int(time.time())
+#        st.st_ctime = int(time.time())
+#        self._inodes[path] = st
+#
+#        """
+#        sm = zmugjson.Smugmug()
+#        sessionid = sm.loginWithPassword(self._config['smugmug.username'],
+#                                         self._config['smugmug.password'])
+#        sm.createAlbum(sessionid, path, Public=0)
+#        sm.logout(sessionid)
+#        """
+#        return -errno.ENOSYS
 
 def main():
     usage = """
@@ -291,12 +340,7 @@ zmugfs: smugmug filesystem
                     usage=usage,
                     dash_s_do='setsingle')
     server.parse(errex=1)
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s %(levelname)-8s %(message)s',
-                        datefmt='%Y %b %d %H:%M:%S',
-                        filename='/tmp/zmugfs.log',
-                        filemode='w')
-    logging.warning("Hey there")
+    log.warning("Hey there")
     server.main()
 
 if __name__ == '__main__':
