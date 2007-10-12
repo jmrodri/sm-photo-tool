@@ -9,6 +9,9 @@ import httplib
 
 fuse.fuse_python_api = (0, 2)
 
+# smugmug api key which identifies this application
+apikey = "xbBmfRgR1whEAOv9QRh687GGP6Ow0IM6"
+
 def _convert_date(datestr):
     # smugmug returns date in the following format: "%Y-%m-%d %H:%M:%S"
     return int(time.mktime(time.strptime(datestr, "%Y-%m-%d %H:%M:%S")))
@@ -110,7 +113,7 @@ class ZmugFS(Fuse):
                 return self._nodes_by_path[p]
 
     def _indexTree(self):
-        sm = zmugjson.Smugmug()
+        sm = zmugjson.Smugmug(apikey)
         sessionid = sm.loginWithPassword(self._config['smugmug.username'],
                                          self._config['smugmug.password'])
         tree = sm.getTree(sessionid, 1)
@@ -232,7 +235,7 @@ class ZmugFS(Fuse):
         logging.warning("read (%s): %d:%d)" % (str(path), int(size), int(offset)))
         node = self._nodes_by_path[path]
 
-        sm = zmugjson.Smugmug()
+        sm = zmugjson.Smugmug(apikey)
         sessionid = sm.loginWithPassword(self._config['smugmug.username'],
                                          self._config['smugmug.password'])
         urls = sm.getImageUrls(sessionid, node.id);
