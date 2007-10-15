@@ -58,7 +58,7 @@ class ZmugFS(Fuse):
 
     def __init__(self, *args, **kw):
         Fuse.__init__(self, *args, **kw)
-        self._config = Config('/etc/zmugfs/zmugfs.conf', '.zmugfsrc')
+        self._config = Config('/etc/zmugfs/zmugfs.conf', '.zmugfs/zmugfsrc')
         self._nodes_by_path = {}
         self._indexTree()
         self._imgdata_by_path = {}
