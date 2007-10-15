@@ -63,6 +63,17 @@ class ZmugFS(Fuse):
         self._indexTree()
         self._imgdata_by_path = {}
 
+    def _findoldestpath(self):
+        items = self._imgdata_by_path.items()
+        oldest = None
+        if items:
+            oldest = items[0]
+            for i in items:
+                if oldest[1]['time'] > i[1]['time']:
+                    oldest = i
+
+        return oldest
+
     #
     # should probably find a cleaner way to group the
     # _inode_from_xxx methods
@@ -265,11 +276,18 @@ class ZmugFS(Fuse):
             imgdata = resp.read()
             conn.close()
 
-            self._imgdata_by_path[path] = imgdata
+            cachesize = self._config.get_int('image.memory.cache', 10)
+            if len(self._imgdata_by_path) > cachesize:
+                # remove the oldest entry first
+                # TODO: use an LRU instead
+                oldest = self._findoldestpath()
+                del self._imgdata_by_path[oldest[0]]
+            self._imgdata_by_path[path] = {'imgdata':imgdata,'time':time.time()}
 
     def read(self, path, size, offset):
         log.debug("read (%s): %d:%d)" % (str(path), int(size), int(offset)))
-        imgdata = self._imgdata_by_path[path]
+        data = self._imgdata_by_path[path]
+        imgdata = data['imgdata']
         imglen = len(imgdata)
         if offset < imglen:
             if offset + size > imglen:
@@ -279,19 +297,12 @@ class ZmugFS(Fuse):
             buf = ''
         return buf
 
-    #def flush(self, path, flags):
-    #    log.debug("flush (%s): flags = %s" % (str(path), str(flags)))
-    #    # we're done with the file for now. Figure out a better way
-    #    # to cache images in the future.
-    #    if self._imgdata_by_path(path):
-    #        self._imgdata_by_path[path] = None
-
     def release(self, path, flags):
         log.debug("release (%s): flags = %s" % (str(path), str(flags)))
         # we're done with the file for now. Figure out a better way
         # to cache images in the future.
-        if self._imgdata_by_path.has_key(path) and self._imgdata_by_path[path]:
-            del self._imgdata_by_path[path]
+        #if self._imgdata_by_path.has_key(path) and self._imgdata_by_path[path]:
+        #    del self._imgdata_by_path[path]
 
 
 #
