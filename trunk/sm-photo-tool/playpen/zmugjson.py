@@ -73,8 +73,8 @@ class Tree(object):
                 print "\t\t%d albums" % len(scat.albums)
 
 def create_tree(nodes):
-    tree = Tree()
     if nodes.has_key('Categories'):
+        tree = Tree()
         for node in nodes['Categories']:
             cat = Category(node['id'], node['Name'])
             if node.has_key('SubCategories'):
@@ -92,7 +92,9 @@ def create_tree(nodes):
 
             tree.nodes.append(cat)
 
-    return tree                        
+        return tree
+    else:
+        return nodes
 
 #####################################################################
 # JSON-PRC proxy
