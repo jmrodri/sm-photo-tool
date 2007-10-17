@@ -261,21 +261,61 @@ class ZmugFS(Fuse):
         if node == None:
             return -errno.ENOENT
 
+        # if not in memory cache
+        # look in disk cache. If still not found,
+        # retrieve from smugmug, store in memory and disk cache.
+        # if found in memory, simply return data
+        # if found on disk, read data, put in memory cache, then return.
+
+
         # see if we already got it
         if not self._imgdata_by_path.has_key(path):
-            sm = zmugjson.Smugmug(apikey)
-            sessionid = sm.loginWithPassword(self._config['smugmug.username'],
-                                             self._config['smugmug.password'])
-            urls = sm.getImageUrls(sessionid, node.id);
-            sm.logout(sessionid)
+            imgdata = None
+            cachedir = None
 
-            parts = urls['OriginalURL'].split('/')
-            conn = httplib.HTTPConnection(parts[2])
-            conn.request("GET",  '/' + '/'.join(parts[3:]))
-            resp = conn.getresponse()
-            imgdata = resp.read()
-            conn.close()
+            # see if we have it on disk
+            homedir = os.environ.get('HOME')
+            if homedir:
+                cachedir = os.path.join(homedir, '.zmugfs/cache')
+                log.debug("using %s as our disk cache" % cachedir)
+                if os.path.exists(cachedir) and os.path.isdir(cachedir):
+                    cachedfile = os.path.join(cachedir, path.lstrip('/'))
+                    if os.path.exists(cachedfile) and os.path.isfile(cachedfile):
+                        f = open(cachedfile, 'rb')
+                        imgdata = f.read()
+                elif not os.path.exists(cachedir):
+                    os.makedirs(cachedir)
+                else:
+                    log.error("%s is not a directory" % str(cachedir))
+                    # TODO should return an errno code here
 
+            # didn't find it on disk, go get it from smugmug
+            if not imgdata:
+                sm = zmugjson.Smugmug(apikey)
+                sessionid = sm.loginWithPassword(self._config['smugmug.username'],
+                                                 self._config['smugmug.password'])
+                urls = sm.getImageUrls(sessionid, node.id);
+                sm.logout(sessionid)
+
+                parts = urls['OriginalURL'].split('/')
+                conn = httplib.HTTPConnection(parts[2])
+                conn.request("GET",  '/' + '/'.join(parts[3:]))
+                resp = conn.getresponse()
+                imgdata = resp.read()
+                conn.close()
+
+                # write to disk cache first
+                cachedfile = os.path.join(cachedir, path.lstrip('/'))
+                log.debug("storing %s to disk cache" % str(cachedfile))
+                dir = os.path.dirname(cachedfile)
+                log.debug("dir: " + str(dir))
+                if not os.path.exists(dir):
+                    os.makedirs(dir)
+                f = open(cachedfile, 'wb')
+                f.write(imgdata)
+                f.close()
+
+            # add to memory cache
             cachesize = self._config.get_int('image.memory.cache', 10)
             if len(self._imgdata_by_path) > cachesize:
                 # remove the oldest entry first
@@ -303,45 +343,6 @@ class ZmugFS(Fuse):
         # to cache images in the future.
         #if self._imgdata_by_path.has_key(path) and self._imgdata_by_path[path]:
         #    del self._imgdata_by_path[path]
-
-
-#
-#    comment out mkdir for now, as we're only going to support
-#    readonly version at first.
-#
-#    def mkdir(self, path, mode):
-#        log.warning("mkdir: (%s): (%o)" % (str(path), mode))
-#        log.warning("create gallery (%s) on smugmug" % str(path))
-#
-#        # split the path along the '/'.  the last one is
-#        # an album. The other levels are categories.
-#        dirs = path.split('/')
-#        log.warning(dirs)
-#
-#        # get the octal of the mode to see if the album
-#        # should be public or not. Need to define a
-#        # whether g+r makes it public or not. u+r only
-#        # makes it private
-#        omode = oct(mode)
-#
-#        # add inode
-#        st = MyStat()
-#        st.st_mode = stat.S_IFDIR | mode
-#        st.st_ino = 2
-#        st.st_nlink = 1
-#        st.st_atime = int(time.time())
-#        st.st_mtime = int(time.time())
-#        st.st_ctime = int(time.time())
-#        self._inodes[path] = st
-#
-#        """
-#        sm = zmugjson.Smugmug()
-#        sessionid = sm.loginWithPassword(self._config['smugmug.username'],
-#                                         self._config['smugmug.password'])
-#        sm.createAlbum(sessionid, path, Public=0)
-#        sm.logout(sessionid)
-#        """
-#        return -errno.ENOSYS
 
 def main():
     usage = """
