@@ -1,6 +1,9 @@
 Introduction
 -------------
 
+mkdir -p $HOME/.zmugfs/cache
+vi $HOME/.zmugfs/zmugfsrc
+
 
 Fedora 7
 --------------
