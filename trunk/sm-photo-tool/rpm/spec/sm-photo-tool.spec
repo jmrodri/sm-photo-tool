@@ -6,7 +6,6 @@ Group:          Applications/Multimedia
 License:        GPL
 URL:            http://sm-photo-tool.sourceforge.net/
 Source0:        %{name}-%{version}.tar.gz
-Patch0:         %{name}-1.10-license.patch
 BuildRoot:      %{_tmppath}/%{name}-root-%(%{__id_u} -n)
 BuildArch:      noarch
 BuildRequires:  python
@@ -17,7 +16,6 @@ Smugmug client
 
 %prep
 %setup -q
-%patch -p1 -b .license
 
 %install
 rm -rf %{buildroot}
@@ -27,7 +25,7 @@ install -d -m 755 %{buildroot}%{_usr}/bin/
 install -d -m 755 %{buildroot}%{_sysconfdir}/%{name}/
 install -m 644 LICENSE.TXT %{buildroot}%{_usr}/share/doc/%{name}-%{version}/
 install -m 644 smugmugrc %{buildroot}%{_usr}/share/doc/%{name}-%{version}/
-install -m 755 sm-photo-tool.py %{buildroot}%{_usr}/bin/%{name}
+install -m 755 sm_photo_tool.py %{buildroot}%{_usr}/bin/%{name}
 
 %clean
 rm -rf %{buildroot}
