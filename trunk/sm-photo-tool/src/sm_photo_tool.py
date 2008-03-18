@@ -34,9 +34,12 @@ import httplib, mimetypes
 import os
 from os import path
 
-version = "1.10"
+version = "1.11"
+key = "4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ"
 
 # Changes:
+#   1.11 bug: 1819595 - fix session bug. Add spaces after all commas.
+#        change url for XMLRPC api.
 #   1.10 Small bug fix for Windows (open file with "rb" mode)
 #   1.9 Handle corrupt data files, add forced upload option.
 #   1.8 Update .JPG and .GIF by default as well
@@ -52,7 +55,7 @@ def error(string):
   stderr.write(string + "\n")
   exit(1)
 
-def message(opts,string):
+def message(opts, string):
   from sys import stderr
   if not opts.quiet:
     stderr.write(string)
@@ -64,50 +67,50 @@ def minutes_seconds(seconds):
         return "%d:%02d" % (seconds / 60, seconds % 60)
 
 def filename_get_line(name):
-  f = file(name,"rU")
+  f = file(name, "rU")
   l = f.readline()
   f.close()
   return l[:-1]
 
 def filename_get_data(name):
-  f = file(name,"rb")
+  f = file(name, "rb")
   d = f.read()
   f.close()
   return d
 
-def filename_put_string(filename,string):
-  f = file(filename,"w")
+def filename_put_string(filename, string):
+  f = file(filename, "w")
   f.write(string)
   f.close()
 
 class LocalInformation:
-  def __init__(self,dir):
+  def __init__(self, dir):
     self.dir = dir
-    self.smdir = path.join(dir,"SMUGMUG_INFO")
+    self.smdir = path.join(dir, "SMUGMUG_INFO")
 
   def exists(self):
-    return path.isdir(self.smdir) and path.isfile(path.join(self.smdir,"gallery"))
+    return path.isdir(self.smdir) and path.isfile(path.join(self.smdir, "gallery"))
 
-  def create(self,gallery):
+  def create(self, gallery):
     if not path.isdir(self.smdir):
       os.mkdir(self.smdir)
-    gallery_file = path.join(self.smdir,"gallery")
+    gallery_file = path.join(self.smdir, "gallery")
     if not path.isfile(gallery_file):
-      filename_put_string(gallery_file,"%s\n" % gallery)
+      filename_put_string(gallery_file, "%s\n" % gallery)
     self.created = True
 
   def gallery_id(self):
     if not self.exists():
       raise "No Localinformation for %s" % (dir)
-    l = filename_get_line(path.join(self.smdir,"gallery"))
+    l = filename_get_line(path.join(self.smdir, "gallery"))
     return l
 
-  def file_needs_upload(self,filename):
+  def file_needs_upload(self, filename):
     try:
       if not self.exists():
         return False
-      head,tail = path.split(filename)
-      infofile = path.join(self.smdir,tail)
+      head, tail = path.split(filename)
+      infofile = path.join(self.smdir, tail)
       if not path.isfile(infofile):
         return True
       #print "Checking %s... " % (infofile)
@@ -121,11 +124,11 @@ class LocalInformation:
     except:
       return True
 
-  def file_uploaded(self,filename):
+  def file_uploaded(self, filename):
     from time import time
 
-    head,tail = path.split(filename)
-    infofile = path.join(self.smdir,tail)
+    head, tail = path.split(filename)
+    infofile = path.join(self.smdir, tail)
 
     if not path.isfile(infofile):
       count = 1
@@ -137,13 +140,13 @@ class LocalInformation:
       except:
         count = 1
 
-    filename_put_string(infofile,"%d %d %d\n" % (time(),
+    filename_put_string(infofile, "%d %d %d\n" % (time(),
                                                  os.stat(filename).st_size,
                                                  count))
 
-  def file_upload_count(self,filename):
-    head,tail = path.split(filename)
-    infofile = path.join(self.smdir,tail)
+  def file_upload_count(self, filename):
+    head, tail = path.split(filename)
+    infofile = path.join(self.smdir, tail)
 
     if not path.isfile(infofile):
       return 0
@@ -153,14 +156,14 @@ class LocalInformation:
       return int(count_s)
 
 
-def caption(filename,opts):
-  head,ext = path.splitext(filename)
+def caption(filename, opts):
+  head, ext = path.splitext(filename)
   capfile = head + ".caption"
   if path.isfile(capfile):
     result = filename_get_data(capfile)
     return f.read()
   if opts.filenames_default_captions:
-    head,tail = path.split(head)
+    head, tail = path.split(head)
     return tail
   return None
 
@@ -168,11 +171,10 @@ def get_content_type(filename):
     return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
 
 class Smugmug:
-  def __init__(self,account,passwd):
+  def __init__(self, account, passwd):
     self.account = account
     self.password = passwd
-    self.sp = ServerProxy("https://upload.smugmug.com/xmlrpc/")
-    self.api_version = "1.0"
+    self.sp = ServerProxy("https://api.smugmug.com/services/api/xmlrpc/1.2.1/", verbose=True)
     self.categories = None
     self.subcategories = None
     self.login()
@@ -181,13 +183,13 @@ class Smugmug:
     self.logout()
 
   def login(self):
-    rep = self.sp.loginWithPassword(self.account,self.password,self.api_version)
-    self.session = rep['SessionID']
+    rc = self.sp.smugmug.login.withPassword(self.account, self.password, key)
+    self.session = rc["Session"]["id"]
 
   def logout(self):
-    self.sp.logout(self.session)
+    self.sp.smugmug.logout(self.session)
 
-  def create_album(self,name,opts):
+  def create_album(self, name, opts):
     properties = {}
     if not opts.category or opts.category == '0':
       category = 0
@@ -224,16 +226,16 @@ class Smugmug:
     if opts.test:
       return 0
     else:
-      return self.sp.createAlbum(self.session,name,category,properties)
+      return self.sp.smugmug.albums.create(self.session, name, category, properties)
 
   def get_categories(self):
-    categories = self.sp.getCategories(self.session)
+    categories = self.sp.smugmug.categories.get(self.session)
     self.categories = {}
     for category in categories:
-      self.categories[category['Title']] = category['CategoryID']
+      self.categories[category['Title']] = category['id']
 
-  def get_category(self,category_string):
-    if re.match("\d+$",category_string):
+  def get_category(self, category_string):
+    if re.match("\d+$", category_string):
       return string.atoi(category_string)
     if not self.categories:
       self.get_categories()
@@ -243,13 +245,13 @@ class Smugmug:
     else:
       return self.categories[category_string]
 
-  def get_subcategory(self,category,subcategory_string):
-    if re.match("\d+$",subcategory_string):
+  def get_subcategory(self, category, subcategory_string):
+    if re.match("\d+$", subcategory_string):
       return string.atoi(subcategory_string)
     if not self.subcategories:
       self.subcategories = {}
     if not self.subcategories.has_key(category):
-      subcategories = self.sp.getSubCategories(self.session,category)
+      subcategories = self.sp.smugmug.subcategories.get(self.session, category)
       subcategory_map = {}
       for subcategory in subcategories:
         subcategory_map[subcategory['Title']] = subcategory['SubCategoryID']
@@ -260,7 +262,7 @@ class Smugmug:
     else:
       return self.subcategories[category][subcategory_string]
 
-  def upload_files(self,albumid,opts,args,local_information=None):
+  def upload_files(self, albumid, opts, args, local_information=None):
     from time import time
     from os import stat
     from string import atoi
@@ -272,12 +274,12 @@ class Smugmug:
     files = []
     for file in args:
       if not path.isfile(file):
-        message(opts,"%s not a file.  Not uploading\n")
+        message(opts, "%s not a file.  Not uploading\n")
         continue
       size = stat(file).st_size
       if size > max_size:
-        message(opts,"%s size %d greater than %d.  Not uploading\n" %
-                (file,size,max_size))
+        message(opts, "%s size %d greater than %d.  Not uploading\n" %
+                (file, size, max_size))
       else:
         files.append(file)
         sizes[file] = size
@@ -288,9 +290,9 @@ class Smugmug:
 
     for file in files:
       t0 = time()
-      message(opts,file + "...")
+      message(opts, file + "...")
       if not opts.test:
-        self.upload_file(albumid,file,caption(file,opts))
+        self.upload_file(albumid, file, caption(file, opts))
       t1 = time()
       if local_information:
         local_information.file_uploaded(file)
@@ -300,7 +302,7 @@ class Smugmug:
         total_xfered_bytes += sizes[file]
         estimated_remaining_seconds = \
                                     (total_size - total_xfered_bytes) / bytes_per_second
-        message(opts,"[OK] %d bytes %d seconds %dKB/sec ETA %s\n" % (
+        message(opts, "[OK] %d bytes %d seconds %dKB/sec ETA %s\n" % (
           sizes[file],
           seconds,
           bytes_per_second / 1000,
@@ -310,34 +312,34 @@ class Smugmug:
 
     total_seconds = time() - t
     try:
-      message(opts,"%s %d bytes %dKB/sec\n" % (
+      message(opts, "%s %d bytes %dKB/sec\n" % (
         minutes_seconds(total_seconds),
         total_size,
         (total_size / total_seconds) / 1000))
     except:
       pass
 
-  def upload_file(self,albumid,filename,caption=None):
+  def upload_file(self, albumid, filename, caption=None):
     fields = []
-    fields.append(['AlbumID',albumid])
-    fields.append(['SessionID',self.session])
+    fields.append(['AlbumID', albumid])
+    fields.append(['SessionID', self.session])
     if caption:
-      fields.append(['Caption',caption])
+      fields.append(['Caption', caption])
 
     data = filename_get_data(filename)
-    fields.append(['ByteCount',str(len(data))])
+    fields.append(['ByteCount', str(len(data))])
 
-    file = ['Image',filename,data]
-    self.post_multipart("upload.smugmug.com","/photos/xmladd.mg",fields,[file])
+    file = ['Image', filename, data]
+    self.post_multipart("upload.smugmug.com", "/photos/xmladd.mg", fields, [file])
 
-  def post_multipart(self,host,selector,fields,files):
+  def post_multipart(self, host, selector, fields, files):
     """
     Post fields and files to an http host as multipart/form-data.  fields is a
     sequence of (name, value) elements for regular form fields.  files is a
     sequence of (name, filename, value) elements for data to be uploaded as
     files Return the server's response page.
     """
-    content_type, body = self.encode_multipart_formdata(fields,files)
+    content_type, body = self.encode_multipart_formdata(fields, files)
     h = httplib.HTTP(host)
     h.putrequest('POST', selector)
     h.putheader('content-type', content_type)
@@ -353,7 +355,7 @@ class Smugmug:
     h.close()
     return result
 
-  def encode_multipart_formdata(self,fields,files):
+  def encode_multipart_formdata(self, fields, files):
     """
     fields is a sequence of (name, value) elements for regular form fields.
     files is a sequence of (name, filename, value) elements for data to be
@@ -388,10 +390,10 @@ def defaults_from_rc():
   from os import environ, path
 
   result = {}
-  rcfile = path.join(environ['HOME'],'.smugmugrc')
+  rcfile = path.join(environ['HOME'], '.smugmugrc')
   if not path.isfile(rcfile):
     return result
-  f = file(rcfile,"rU")
+  f = file(rcfile, "rU")
   try:
     option = None
     for lwithnl in f:
@@ -404,7 +406,7 @@ def defaults_from_rc():
       if option:
         value += l
       else:
-        colon_index = string.find(l,":")
+        colon_index = string.find(l, ":")
         if colon_index != -1:
           option = l[0:colon_index]
           value = l[colon_index+1:]
@@ -426,7 +428,7 @@ def to_bool(str):
 
 
 class Options:
-  def __init__(self,argv):
+  def __init__(self, argv):
     self.rcfile_options = defaults_from_rc()
     self.short_usage = \
       "sm-photo-tool create gallery_name [options] [file...]\n" \
@@ -488,41 +490,41 @@ class Options:
     group = OptionGroup(self.parser,
                         "Common options",
                         "These apply to all functions")
-    self.add_string_option(group,'login',help="REQUIRED")
-    self.add_string_option(group,"password",help="REQUIRED")
-    self.add_bool_option(group,"quiet",help="Don't tell us what you are doing")
-    self.add_bool_option(group,"test",
+    self.add_string_option(group, 'login', help="REQUIRED")
+    self.add_string_option(group, "password", help="REQUIRED")
+    self.add_bool_option(group, "quiet", help="Don't tell us what you are doing")
+    self.add_bool_option(group, "test",
                          help="Don't actually create galleries or upload files.")
     self.parser.add_option_group(group)
 
     group = OptionGroup(self.parser,
                         "Create options",
                         "Only relevant when albums are created")
-    self.add_string_option(group,"category")
-    self.add_string_option(group,"subcategory")
-    self.add_string_option(group,"description")
-    self.add_string_option(group,"keywords")
-    self.add_string_option(group,"gallery_password")
-    self.add_bool_option(group,"public")
-    self.add_bool_option(group,"show_filenames")
-    self.add_bool_option(group,"comments_allowed",default=True)
-    self.add_bool_option(group,"external_links_allowed",default=True)
-    self.add_bool_option(group,"show_camera_info",default=True)
-    self.add_bool_option(group,"easy_sharing_allowed",default=True)
-    self.add_bool_option(group,"print_ordering_allowed",default=True)
-    self.add_bool_option(group,"originals_allowed")
-    self.add_string_option(group,"community")
+    self.add_string_option(group, "category")
+    self.add_string_option(group, "subcategory")
+    self.add_string_option(group, "description")
+    self.add_string_option(group, "keywords")
+    self.add_string_option(group, "gallery_password")
+    self.add_bool_option(group, "public")
+    self.add_bool_option(group, "show_filenames")
+    self.add_bool_option(group, "comments_allowed", default=True)
+    self.add_bool_option(group, "external_links_allowed", default=True)
+    self.add_bool_option(group, "show_camera_info", default=True)
+    self.add_bool_option(group, "easy_sharing_allowed", default=True)
+    self.add_bool_option(group, "print_ordering_allowed", default=True)
+    self.add_bool_option(group, "originals_allowed")
+    self.add_string_option(group, "community")
     self.parser.add_option_group(group)
 
     group = OptionGroup(self.parser,
                         "Upload options",
                         "Only relevant when files are uploaded")
-    self.add_bool_option(group,"filenames_default_captions")
-    self.add_string_option(group,"max_size",
+    self.add_bool_option(group, "filenames_default_captions")
+    self.add_string_option(group, "max_size",
                            default="8000000",
                            help="Only upload if file <= this. By default "
                                 "8000000 bytes.")
-    self.add_string_option(group,"filter_regular_expression",
+    self.add_string_option(group, "filter_regular_expression",
                            help="Only upload files that match. "
                                 "By default, all .jpg and .gif files are "
                                 "eligible.",
@@ -538,7 +540,7 @@ class Options:
     error("Usage: " + self.short_usage +
           "\n       sm-photo-tool --help for complete documentaton\n")
 
-  def add_bool_option(self,x,name,*args,**kwargs):
+  def add_bool_option(self, x, name, *args, **kwargs):
     try:
       kwargs['default'] = to_bool(self.rcfile_options[name])
     except:
@@ -547,65 +549,65 @@ class Options:
       kwargs['default'] = False
     kwargs['help'] = "Default: %s" % (kwargs['default'])
     kwargs['action'] = 'store_true'
-    x.add_option('--'+name,*args,**kwargs)
+    x.add_option('--'+name, *args, **kwargs)
     kwargs['action'] = 'store_false'
     del kwargs['help']
-    x.add_option('--no-'+name,*args,**kwargs)
+    x.add_option('--no-'+name, *args, **kwargs)
 
-  def add_string_option(self,x,name,*args,**kwargs):
+  def add_string_option(self, x, name, *args, **kwargs):
     try:
       kwargs['default'] = self.rcfile_options[name]
     except:
       pass
-    x.add_option('--'+name,*args,**kwargs)
+    x.add_option('--'+name, *args, **kwargs)
 
-def create(smugmug,name,dir,opts):
-  album_id = smugmug.create_album(name,opts)
+def create(smugmug, name, dir, opts):
+  album_id = smugmug.create_album(name, opts)
   li = LocalInformation(dir)
   li.create(album_id)
 
-def update_dir(smugmug,dir,opts,files):
+def update_dir(smugmug, dir, opts, files):
   li = LocalInformation(dir)
   
   files_to_upload = []
   for f in files:
-    if re.match(opts.filter_regular_expression,f):
-      file = path.join(dir,f)
+    if re.match(opts.filter_regular_expression, f):
+      file = path.join(dir, f)
       if li.file_needs_upload(file):
         files_to_upload.append(file)
   if len(files_to_upload) > 0:
     files_to_upload.sort()
-    smugmug.upload_files(li.gallery_id(),opts,files_to_upload,
+    smugmug.upload_files(li.gallery_id(), opts, files_to_upload,
                          local_information=li)
 
 
-def create_update(name,options):
+def create_update(name, options):
   opts = options.options
-  smugmug = Smugmug(opts.login,opts.password)
-  create(smugmug,name,".",opts)
-  update_dir(smugmug,".",opts,options.args)
+  smugmug = Smugmug(opts.login, opts.password)
+  create(smugmug, name, ".", opts)
+  update_dir(smugmug, ".", opts, options.args)
   
-def create_upload(name,options):
+def create_upload(name, options):
   opts = options.options
   rest = options.args
-  smugmug = Smugmug(opts.login,opts.password)
-  album_id = "%d" % smugmug.create_album(name,opts)
-  smugmug.upload_files(album_id,opts,rest)
+  smugmug = Smugmug(opts.login, opts.password)
+  album_id = "%d" % smugmug.create_album(name, opts)
+  smugmug.upload_files(album_id, opts, rest)
 
-def upload(album_id,options):
+def upload(album_id, options):
   opts = options.options
   rest = options.args
-  smugmug = Smugmug(opts.login,opts.password)
-  smugmug.upload_files(album_id,opts,rest)
+  smugmug = Smugmug(opts.login, opts.password)
+  smugmug.upload_files(album_id, opts, rest)
 
 def update(options):
   opts = options.options
-  smugmug = Smugmug(opts.login,opts.password)
-  update_dir(smugmug,".",opts,os.listdir("."))
+  smugmug = Smugmug(opts.login, opts.password)
+  update_dir(smugmug, ".", opts, os.listdir("."))
 
 def full_update(options):
   opts = options.options
-  smugmug = Smugmug(opts.login,opts.password)
+  smugmug = Smugmug(opts.login, opts.password)
   opts = options.options
   for root, dirs, files in os.walk("."):
     try:
@@ -615,15 +617,15 @@ def full_update(options):
     li = LocalInformation(root)
     # Look for at least one matching file before making directory
     for file in files:
-      if re.match(opts.filter_regular_expression,file):
+      if re.match(opts.filter_regular_expression, file):
         if not li.exists():
-          title_file = path.join(root,"Title")
+          title_file = path.join(root, "Title")
           if path.isfile(title_file):
             name = filename_get_line(title_file)
           else:
             name = root[2:] # strip of initial ./ or .\
-          create(smugmug,name,root,opts)
-        update_dir(smugmug,root,opts,files)
+          create(smugmug, name, root, opts)
+        update_dir(smugmug, root, opts, files)
         break
 
 def main():
@@ -634,15 +636,15 @@ def main():
   elif argv[1] == 'create_upload':
     if len(argv) < 3:
       Options([]).help()
-    create_upload(argv[2],Options(argv[3:]))
+    create_upload(argv[2], Options(argv[3:]))
   elif argv[1] == 'create':
     if len(argv) < 3:
       Options([]).help()
-    create_update(argv[2],Options(argv[3:]))
+    create_update(argv[2], Options(argv[3:]))
   elif argv[1] == 'upload':
     if len(argv) < 3:
       Options([]).help()
-    upload(argv[2],Options(argv[3:]))
+    upload(argv[2], Options(argv[3:]))
   elif argv[1] == 'update':
     update(Options(argv[2:]))
   elif argv[1] == 'full_update':
