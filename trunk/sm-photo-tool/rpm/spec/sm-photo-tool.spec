@@ -1,5 +1,5 @@
 Name:           sm-photo-tool
-Version:        1.10
+Version:        1.11
 Release:        1
 Summary:        Smugmug client
 Group:          Applications/Multimedia
@@ -39,5 +39,8 @@ rm -rf %{buildroot}
 %{_usr}/share/doc/%{name}-%{version}/smugmugrc
 
 %changelog
+* Mon Mar 17 2007 Jesus Rodriguez <jmrodri at gmail dot com> 1.11-1
+- fix bug: 1819595
+- reformat code to have spaces after all comma's
 * Sat Apr  1 2006 Jesus Rodriguez <jmrodri at gmail dot com> 1.10-1
 - initial rpm release
