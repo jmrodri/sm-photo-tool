@@ -31,6 +31,7 @@ import string
 import re
 from xmlrpclib import *
 import httplib, mimetypes
+import md5
 import os
 from os import path
 
@@ -226,7 +227,10 @@ class Smugmug:
     if opts.test:
       return 0
     else:
-      return self.sp.smugmug.albums.create(self.session, name, category, properties)
+      rsp = self.sp.smugmug.albums.create(self.session, name, category, properties)
+      # when key is supported return id and key
+      #return "%d_%s" % (rsp['Album']['id'], rsp['Album']['Key'])
+      return rsp['Album']['id']
 
   def get_categories(self):
     categories = self.sp.smugmug.categories.get(self.session)
@@ -321,13 +325,14 @@ class Smugmug:
 
   def upload_file(self, albumid, filename, caption=None):
     fields = []
-    fields.append(['AlbumID', albumid])
-    fields.append(['SessionID', self.session])
-    if caption:
-      fields.append(['Caption', caption])
-
     data = filename_get_data(filename)
     fields.append(['ByteCount', str(len(data))])
+    fields.append(['MD5Sum', md5.new(data).hexdigest()])
+    fields.append(['AlbumID', albumid])
+    fields.append(['SessionID', self.session])
+    fields.append(['ResponseType', 'XML-RPC'])
+    if caption:
+      fields.append(['Caption', caption])
 
     file = ['Image', filename, data]
     self.post_multipart("upload.smugmug.com", "/photos/xmladd.mg", fields, [file])
