@@ -174,7 +174,7 @@ class Smugmug:
   def __init__(self, account, passwd):
     self.account = account
     self.password = passwd
-    self.sp = ServerProxy("https://api.smugmug.com/services/api/xmlrpc/1.2.1/", verbose=True)
+    self.sp = ServerProxy("https://api.smugmug.com/services/api/xmlrpc/1.2.1/")
     self.categories = None
     self.subcategories = None
     self.login()
