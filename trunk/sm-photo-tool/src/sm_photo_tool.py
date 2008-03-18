@@ -163,7 +163,7 @@ def caption(filename, opts):
   capfile = head + ".caption"
   if path.isfile(capfile):
     result = filename_get_data(capfile)
-    return f.read()
+    return result
   if opts.filenames_default_captions:
     head, tail = path.split(head)
     return tail
