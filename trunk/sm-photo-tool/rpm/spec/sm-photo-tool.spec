@@ -1,5 +1,5 @@
 Name:           sm-photo-tool
-Version:        1.11
+Version:        1.12
 Release:        1
 Summary:        Smugmug client
 Group:          Applications/Multimedia
@@ -37,6 +37,8 @@ rm -rf %{buildroot}
 %{_usr}/share/doc/%{name}-%{version}/smugmugrc
 
 %changelog
+* Tue Mar 18 2007 Jesus Rodriguez <jmrodri at gmail dot com> 1.12-1
+-  albumid written incorrectly to gallery file causing img uploads to fail
 * Mon Mar 17 2007 Jesus Rodriguez <jmrodri at gmail dot com> 1.11-1
 - fix bug: 1819595
 - reformat code to have spaces after all comma's

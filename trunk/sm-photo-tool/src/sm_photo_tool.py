@@ -35,10 +35,11 @@ import md5
 import os
 from os import path
 
-version = "1.11"
+version = "1.12"
 key = "4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ"
 
 # Changes:
+#   1.12 albumid written incorrectly to gallery file causing img uploads to fail
 #   1.11 bug: 1819595 - fix session bug. Add spaces after all commas.
 #        change url for XMLRPC api.
 #   1.10 Small bug fix for Windows (open file with "rb" mode)
