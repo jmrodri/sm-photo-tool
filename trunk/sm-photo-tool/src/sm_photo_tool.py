@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
-# smugmug - update and create smugmug galleries from the command line
-# Use smugmug --help for more info
+# sm_photo_tool.py - update and create smugmug galleries from the command line
+#
+# Run sm_photo_tool --help for more info
 # 
 # Copyright (C) 2004 John C. Ruttenberg
+# Copyright (C) 2007-2008 Jesus M. Rodriguez
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -35,10 +37,17 @@ import md5
 import os
 from os import path
 
-version = "1.12"
+version = "1.13"
+# sm_photo_tool offical key:
 key = "4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ"
 
 # Changes:
+#   1.13 Finish rename to 'sm_photo_tool.py'
+#        Fix ".caption" file loading
+#        Add "list" command to list images in a given gallery
+#        Add "galleries" command to list gallery ids
+#        Send 'messages' to stdout
+#        (patch courtesy of Patrick Tullmann)
 #   1.12 albumid written incorrectly to gallery file causing img uploads to fail
 #   1.11 bug: 1819595 - fix session bug. Add spaces after all commas.
 #        change url for XMLRPC api.
@@ -52,15 +61,20 @@ key = "4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ"
 #   1.4 Fix bug with boolean options and gallery creation
 #   1.3 Document Title feature
 
+# Todo list:
+#   X.XX Add .smt extension to sm_photo_tool info files in SMUGMUG_INFO directory
+
+
+
 def error(string):
   from sys import exit, stderr
   stderr.write(string + "\n")
   exit(1)
 
 def message(opts, string):
-  from sys import stderr
+  from sys import stdout
   if not opts.quiet:
-    stderr.write(string)
+    stdout.write(string)
 
 def minutes_seconds(seconds):
     if seconds < 60:
@@ -158,6 +172,17 @@ class LocalInformation:
       return int(count_s)
 
 
+#
+# Get the caption for a given filename.  If a ".caption" file exists
+# for the file to upload, use the contents of that file.  Otherwise,
+# if the filenames-are-default-captions bool is set, use the name of the
+# file as the caption.
+#
+# Alternatively, instead of doing captioning through this tool, once
+# an image is uploaded to smugmug, the smugmug system will use the
+# "IPTC:Caption-Abstract" EXIF header field as a default caption.
+# (Try 'exiftool -Caption-Abstract="this is a test caption" foo.jpg.)
+#
 def caption(filename, opts):
   head, ext = path.splitext(filename)
   capfile = head + ".caption"
@@ -279,7 +304,7 @@ class Smugmug:
     files = []
     for file in args:
       if not path.isfile(file):
-        message(opts, "%s not a file.  Not uploading\n")
+        message(opts,"%s is not a file.  Not uploading.\n" % file)
         continue
       size = stat(file).st_size
       if size > max_size:
@@ -324,6 +349,33 @@ class Smugmug:
     except:
       pass
 
+  # List all the images in the given album
+  def list_files(self, albumid, opts, args):
+    # Get IDs in album
+    resp = self.sp.smugmug.images.get(self.session, albumid) #XXX use Heavy version?
+    imageIDs = resp['Images']
+
+    for imgHandle in imageIDs:
+      #print "got imgHandle", imgHandle
+      imgID = imgHandle['id']
+      imgKey = imgHandle['Key'] #XXX key not necessary when logged in?
+      resp = self.sp.smugmug.images.getInfo(self.session, imgID, imgKey)
+      img = resp['Image']
+      #print "Got img ", img
+      message(opts, "%d: %s (%d x %d):%s\n" %
+              (imgID, img['FileName'], img['Width'], img['Height'], img['Caption']))
+                                       
+  # List all the albums/galleries the current user has
+  def list_galleries(self, opts, arg):
+    # Get IDs in album
+    resp = self.sp.smugmug.albums.get(self.session)
+    albums = resp['Albums']
+
+    for alb in albums:
+      #print "alb", alb
+      message(opts, "%9d: %s\n" % (alb['id'], alb['Title']))
+
+
   def upload_file(self, albumid, filename, caption=None):
     fields = []
     data = filename_get_data(filename)
@@ -343,7 +395,7 @@ class Smugmug:
     Post fields and files to an http host as multipart/form-data.  fields is a
     sequence of (name, value) elements for regular form fields.  files is a
     sequence of (name, filename, value) elements for data to be uploaded as
-    files Return the server's response page.
+    files. Returns the server's response page.
     """
     content_type, body = self.encode_multipart_formdata(fields, files)
     h = httplib.HTTP(host)
@@ -396,9 +448,14 @@ def defaults_from_rc():
   from os import environ, path
 
   result = {}
-  rcfile = path.join(environ['HOME'], '.smugmugrc')
+  rcfile = path.join(environ['HOME'], '.sm_toolrc')
+
+  # Try the older .smugmugrc, just to avoid pissing off "customers"
   if not path.isfile(rcfile):
-    return result
+    rcfile = path.join(environ['HOME'],'.smugmugrc')
+    if not path.isfile(rcfile):
+      return result
+
   f = file(rcfile, "rU")
   try:
     option = None
@@ -436,30 +493,33 @@ def to_bool(str):
 class Options:
   def __init__(self, argv):
     self.rcfile_options = defaults_from_rc()
-    self.short_usage = \
-      "sm-photo-tool create gallery_name [options] [file...]\n" \
-      "       sm-photo-tool create_upload gallery_name [options] [file...]\n" \
-      "       sm-photo-tool update [options]\n" \
-      "       sm-photo-tool full_update [options]\n" \
-      "       sm-photo-tool upload gallery_id [options] file...\n"
+    self.toolName = "sm_photo_tool.py"
+    self.short_usage = "\n" + \
+      "       " +self.toolName+ " create <gallery_name> [options] [file...]\n" \
+      "       " +self.toolName+ " create_upload <gallery_name> [options] [file...]\n" \
+      "       " +self.toolName+ " update [options]\n" \
+      "       " +self.toolName+ " full_update [options]\n" \
+      "       " +self.toolName+ " upload <gallery_ID> [options] file...\n" \
+      "       " +self.toolName+ " list <gallery_ID>\n" \
+      "       " +self.toolName+ " galleries\n"
     self.parser = OptionParser(
       self.short_usage +
       "\n"
-      "Create smugmug galleries and upload to them.  Mirror directory trees \n"
-      "on smugmug and keep up to date.\n"
+      "Create smugmug galleries and upload files to galleries.\n"
+      "Also mirror directory trees onto smugmug and keep galleries up to date.\n"
       "\n"
-      "sm-photo-tool create gallery_name -- creates a new gallery and uploads the \n"
+      +self.toolName+ " create <gallery_name> -- creates a new gallery and uploads the \n"
       "given files to it.\n"
       "\n"
-      "sm-photo-tool create_upload gallery_name -- creates a new gallery and uploads the \n"
+      +self.toolName+ " create_upload <gallery_name> -- creates a new gallery and uploads the \n"
       "  given files to it, ignoring any previous upload state.  Use this if you\n"
       "  Want to do a 1-time upload to a new gallery without messing up future updates.\n"
       "\n"
-      "sm-photo-tool update -- Updates the smugmug gallery associated with the \n"
+      "" +self.toolName+ " update -- Updates the smugmug gallery associated with the \n"
       "working directory with any images that are either new or modified since\n"
       "creation or the last update\n"
       "\n"
-      "sm-photo-tool full_update [options] -- Mirror an entire directory tree on \n"
+      +self.toolName+ " full_update [options] -- Mirror an entire directory tree on \n"
       "smugmug.  The current working directory and all it's subdirectories are \n"
       "examined for image suitable image files.  Directories already \n"
       "corresponding to smugmug galleries, an update is performed.  Directories \n"
@@ -470,14 +530,14 @@ class Options:
       "relevant directory.  If this exists, it's contents are used to name the new \n"
       "gallery.\n"
       "\n"
-      "sm-photo-tool upload -- Simply upload the listed files to the smugmug \n"
-      "gallery with the given gallery_id.  Unlike the above command, does not \n"
-      "require or update any local information.\n"
+      +self.toolName+ " upload <gallery_ID> [options] file...-- Simply upload the\n"
+      "listed files to the smugmug gallery with the given gallery_id.  Unlike\n"
+      "the above command, does not require or update any local information.\n"
       "\n\n"
-      "sm-photo-tool accepts a number of command line options.  The default for \n"
-      "any option can be specified in the a .smugmugrc file in the user's home \n"
+      +self.toolName+ " accepts a number of command line options.  The default for \n"
+      "any option can be specified in the a .sm_toolrc file in the user's home \n"
       "directory.  The format of lines in that file is:\n"
-      "  option_name: default\n"
+      "  <option_name>: <value>\n"
       "For example:\n"
       "  login: joe@photographer.com\n"
       "  password: hotdog\n"
@@ -528,8 +588,8 @@ class Options:
     self.add_bool_option(group, "filenames_default_captions")
     self.add_string_option(group, "max_size",
                            default="8000000",
-                           help="Only upload if file <= this. By default "
-                                "8000000 bytes.")
+                           help="Maximum file size (bytes) to upload."
+                                "  Default: 8000000.")
     self.add_string_option(group, "filter_regular_expression",
                            help="Only upload files that match. "
                                 "By default, all .jpg and .gif files are "
@@ -544,7 +604,7 @@ class Options:
 
   def help(self):
     error("Usage: " + self.short_usage +
-          "\n       sm-photo-tool --help for complete documentaton\n")
+          "\n       " +self.toolName+ " --help for complete documentaton\n")
 
   def add_bool_option(self, x, name, *args, **kwargs):
     try:
@@ -634,6 +694,21 @@ def full_update(options):
         update_dir(smugmug, root, opts, files)
         break
 
+def listalbum(album_id, options):
+  '''List all images in the given album.'''
+  opts = options.options
+  rest = options.args
+  smugmug = Smugmug(opts.login, opts.password)
+  smugmug.list_files(album_id, opts, rest)
+
+def listgalleries(options):
+  '''List all albums owned by this session.'''
+  opts = options.options
+  rest = options.args
+  smugmug = Smugmug(opts.login, opts.password)
+  smugmug.list_galleries(opts, rest)
+
+
 def main():
   from sys import argv, exit
 
@@ -651,6 +726,12 @@ def main():
     if len(argv) < 3:
       Options([]).help()
     upload(argv[2], Options(argv[3:]))
+  elif argv[1] == 'list':
+    if len(argv) < 3:
+      Options([]).help()
+    listalbum(argv[2], Options(argv[3:]))
+  elif argv[1] == 'galleries':
+    listgalleries(Options(argv[3:]))
   elif argv[1] == 'update':
     update(Options(argv[2:]))
   elif argv[1] == 'full_update':
@@ -658,6 +739,7 @@ def main():
   elif argv[1] == '--help':
     Options(argv[1:])
   else:
+    stderr.write("Unknown command/options %s" % argv[1]);
     Options([]).help()
 
 if __name__ == "__main__":
