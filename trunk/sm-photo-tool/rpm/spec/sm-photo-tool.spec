@@ -1,6 +1,7 @@
 Name:           sm-photo-tool
-Version:        1.12
-Release:        1
+Source1:	version
+Version:        %(echo `awk '{ print $1 }' %{SOURCE1}`)
+Release:        %(echo `awk '{ print $2 }' %{SOURCE1}`)
 Summary:        Smugmug client
 Group:          Applications/Multimedia
 License:        GPL
