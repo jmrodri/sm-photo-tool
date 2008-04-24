@@ -13,31 +13,21 @@ http://gate.chezrutt.com:8030/rutt/sm_tool/sm_tool.py
 I wanted to find a home for sm_tool.py and give it issue and version
 tracking.
 
-sm_tool.py - actual python script
-smugmugrc - configuration file used by the script
+src/sm_photo_tool.py - actual python script
+src/smugmugrc - configuration file used by the script
 LICENSE.TXT - GNU GENERAL PUBLIC LICENSE 2.0
-sm_tool.spec - Fedora Core RPM spec file.  Not yet finished.
+rpm/spec/sm_photo_tool.spec - Fedora RPM spec file.
 
 BUILDING RPM
 -------------
 If you'd like to build an RPM follow these simple steps:
 
-1) create the tar file for use in the src.rpm
+1) make release
 
-   ./buildtar.sh
+2) you can find the rpm in rpm-build
 
-2) now symlink the files in the rpm/ directory to the appropriate
-   rpm build environment.  Defaults to /usr/src/redhat/.
+BUILDING TARBALL
+-----------------
+1) make maketar
 
-   cd /usr/src/redhat/SOURCES/
-   ln -s $SM_PHOTO_TOOL/rpm/sm-photo-tool-1.10.tar.gz
-   ln -s $SM_PHOTO_TOOL/rpm/sm-photo-tool-1.10-license.patch
-   cd /usr/src/redhat/SPECS/
-   ln -s $SM_PHOTO_TOOL/rpm/spec/sm-photo-tool.spec
-
-3) now build the rpm
-
-   cd /usr/src/redhat/SPECS/
-   rpmbuild -ba sm-photo-tool.spec
-
-4) you can find the rpm in /usr/src/redhat/RPMS/noarch/
+2) you can find the tarball in dist/
