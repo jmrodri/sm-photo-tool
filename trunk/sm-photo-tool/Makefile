@@ -1,6 +1,6 @@
 NAME		= sm-photo-tool
 VERSION		= $(shell echo `grep "^version" src/sm_photo_tool.py | awk '{print $$3}' | sed 's/\"//g'`)
-RELEASE		= 1
+RELEASE		= 2
 
 debug:
 	-echo $(VERSION)
