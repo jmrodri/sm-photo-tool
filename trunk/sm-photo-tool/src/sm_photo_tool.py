@@ -375,7 +375,6 @@ class Smugmug:
       #print "alb", alb
       message(opts, "%9d: %s\n" % (alb['id'], alb['Title']))
 
-
   def upload_file(self, albumid, filename, caption=None):
     fields = []
     data = filename_get_data(filename)
@@ -389,6 +388,37 @@ class Smugmug:
 
     file = ['Image', filename, data]
     self.post_multipart("upload.smugmug.com", "/photos/xmladd.mg", fields, [file])
+
+  #def upload_file(self, albumid, filename, caption=None):
+  #  fields = []
+  #  data = filename_get_data(filename)
+  #  fields.append(['Content-Length', str(len(data))])
+  #  fields.append(['Content-MD5', md5.new(data).hexdigest()])
+  #  fields.append(['X-Smug-SessionID', self.session])
+  #  fields.append(['X-Smug-Version', '1.2.1'])
+  #  fields.append(['X-Smug-AlbumID', albumid])
+  #  fields.append(['X-Smug-FileName', filename])
+  #  if caption:
+  #      fields.append(['X-Smug-Caption', caption])
+  #  fields.append(['ResponseType', 'XML-RPC'])
+  #  if caption:
+  #    fields.append(['Caption', caption])
+  #
+  #  file = ['Image', filename, data]
+  #  self.put("upload.smugmug.com", filename, fields, [file])
+
+  def put(self, host, selector, fields, files):
+    h = httplib.HTTP(host)
+    h.putrequest('PUT', '/' + selector.split('/')[1])
+    for (hdr, value) in fields:
+        h.putheader(hdr, value)
+    h.endheaders()
+    file = files[0]
+    h.send(file[2])
+    errcode, errmsg, headers = h.getreply()
+    result = h.file.read()
+    h.close()
+    return result
 
   def post_multipart(self, host, selector, fields, files):
     """
@@ -587,14 +617,14 @@ class Options:
                         "Only relevant when files are uploaded")
     self.add_bool_option(group, "filenames_default_captions")
     self.add_string_option(group, "max_size",
-                           default="8000000",
+                           default="800000000",
                            help="Maximum file size (bytes) to upload."
-                                "  Default: 8000000.")
+                                "  Default: 800000000.")
     self.add_string_option(group, "filter_regular_expression",
                            help="Only upload files that match. "
                                 "By default, all .jpg and .gif files are "
                                 "eligible.",
-                           default=".*\\.(jpg|gif|JPG|GIF)")
+                           default=".*\\.(jpg|gif|avi|JPG|GIF|AVI)")
     self.parser.add_option_group(group)
 
     self.options, self.args = self.parser.parse_args(argv)
