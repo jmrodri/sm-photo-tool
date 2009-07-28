@@ -23,6 +23,13 @@ import commands
 class CLI:
     def __init__(self):
         self.cli_commands = {}
+        for clazz in commands.__dict__.values():
+            if isinstance(clazz, type) and  \
+                    issubclass(clazz, commands.CliCommand):
+
+                cmd = clazz()
+                self.cli_commands[cmd.get_name()] = cmd 
+
         self._add_command(commands.ListCommand())
 
     def _add_command(self, cmd):
@@ -31,7 +38,8 @@ class CLI:
     def _usage(self):
         print("Usage: %s MODULENAME --help" % (os.path.basename(sys.argv[0])))
         print("Supported modules:")
-        print("loop through the commands and print usage")
+        for (name, cmd) in self.cli_commands.items():
+            print("%s - %s" % (name, cmd.parser.usage))
 
     def main(self):
         if len(sys.argv) < 2 or not self.cli_commands.has_key(sys.argv[1]):
@@ -40,5 +48,3 @@ class CLI:
 
         cmd = self.cli_commands[sys.argv[1]]
         cmd.main()
-
-

@@ -73,8 +73,11 @@ def error(string):
 
 def message(opts, string):
   from sys import stdout
-  if not opts.quiet:
-    stdout.write(string)
+  if opts:
+     if not opts.quiet:
+        stdout.write(string)
+  else:
+     stdout.write(string)
 
 def minutes_seconds(seconds):
     if seconds < 60:

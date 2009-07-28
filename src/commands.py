@@ -18,13 +18,15 @@
 
 import sys
 from optparse import OptionParser
+from sm_photo_tool import Smugmug
 
 class CliCommand(object):
     """ common """
 
-    def __init__(self, usage=None):
+    def __init__(self, name="cli", usage=None):
         self.parser = OptionParser(usage)
         self._add_common_options()
+        self.name = name
 
     def _add_common_options(self):
         # add options that apply to ALL of them.
@@ -44,10 +46,10 @@ class CliCommand(object):
         pass
 
     def get_name(self):
-        pass
+        return self.name
 
     def main(self):
-        (self.options, args) = self.parser.parse_args()
+        (self.options, self.args) = self.parser.parse_args()
 
         self._validate_options()
 
@@ -58,35 +60,65 @@ class CliCommand(object):
 
 
 class CreateCommand(CliCommand):
-    pass
+    def __init__(self):
+        usage = "usage: %prog build [options]"
+        CliCommand.__init__(self, "create", usage)
 
 class CreateUploadCommand(CliCommand):
-    pass
+    def __init__(self):
+        usage = "usage: %prog build [options]"
+        CliCommand.__init__(self, "create_upload", usage)
 
 class UpdateCommand(CliCommand):
-    pass
+    def __init__(self):
+        usage = "usage: %prog build [options]"
+        CliCommand.__init__(self, "update", usage)
 
 class FullUpdateCommand(CliCommand):
-    pass
+    def __init__(self):
+        usage = "usage: %prog build [options]"
+        CliCommand.__init__(self, "full_update", usage)
 
 class UploadCommand(CliCommand):
-    pass
+    def __init__(self):
+        usage = "usage: %prog build [options]"
+        CliCommand.__init__(self, "upload", usage)
 
 class ListCommand(CliCommand):
     """ List commands """
 
     def __init__(self):
         usage = "usage: %prog build [options]"
-        CliCommand.__init__(self, usage)
+        CliCommand.__init__(self, "list", usage)
+        self.valid_options = ["album", "gallery"]
 
         # add the list options here
+        #self.parser.add_option("--album", dest="album", metavar="ALBUM",
+        #    help="List the contents of an album")
+        #self.parser.add_option("--gallery", dest="gallery", metavar="GALLERY",
+        #    help="List the contents of a gallery")
 
     def _do_command(self):
         # do the list work
-        print("list")
+        smugmug = Smugmug(self.options.login, self.options.password)
 
-    def get_name(self):
-        return "list"
+        cmd = self.args[1]
+        id = self.args[2]
+        if cmd == "album":
+            smugmug.list_files(id, None, None)
+        elif cmd == "gallery":
+            print("gallery")
+        else:
+            print("foobar")
+
+    def _validate_options(self):
+        if len(self.args) < 3:
+            print("ERROR: requires album or gallery")
+            sys.exit(1)
+
+        if self.args[1] not in self.valid_options:
+            print("ERROR: valid options are %s" % self.valid_options)
+            sys.exit(1)
 
 class GalleriesCommand(CliCommand):
     pass
