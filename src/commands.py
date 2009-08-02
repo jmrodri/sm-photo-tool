@@ -71,11 +71,24 @@ class CliCommand(object):
     def _get_defaults(self):
         pass
 
-
 class CreateCommand(CliCommand):
     def __init__(self):
         usage = "usage: %prog build [options]"
         CliCommand.__init__(self, "create", usage)
+
+    def _do_command(self):
+        # connect to smugmug.com
+        self.smugmug = Smugmug(self.options.login, self.options.password)
+        name = self.args[1]
+        # TODO: get options to album from CLI
+        album_id = self.smugmug.create_album(name, None)
+        print("%s created with id %s" % (name, album_id))
+
+    def _validate_options(self):
+        if len(self.args) < 2:
+            print("ERROR: requires album name")
+            sys.exit(1)
+
 
 class CreateUploadCommand(CliCommand):
     def __init__(self):

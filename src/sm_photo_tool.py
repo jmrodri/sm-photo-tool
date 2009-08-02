@@ -219,47 +219,38 @@ class Smugmug:
   def logout(self):
     self.sp.smugmug.logout(self.session)
 
+  def _set_property(self, props, name, opt):
+     if opt != None:
+        props[name] = opt
+
   def create_album(self, name, opts):
     properties = {}
-    if not opts.category or opts.category == '0':
-      category = 0
-    else:
-      category = self.get_category(opts.category)
-      if opts.subcategory:
-        properties["SubCategoryID"] = self.get_subcategory(category,
-                                                           opts.subcategory)
-    if opts.description != None:
-      properties["Description"] = opts.description
-    if opts.keywords != None:
-      properties["Keywords"] = opts.keywords
-    if opts.gallery_password != None:
-      properties["Password"] = opts.gallery_password
-    if opts.public != None:
-      properties["Public"] = opts.public
-    if opts.show_filenames != None:
-      properties["Filenames"] = opts.show_filenames
-    if opts.comments_allowed != None:
-      properties["Comments"] = opts.comments_allowed
-    if opts.external_links_allowed != None:
-      properties["External"] = opts.external_links_allowed
-    if opts.show_camera_info != None:
-      properties["EXIF"] = opts.show_camera_info
-    if opts.easy_sharing_allowed != None:
-      properties["Share"] = opts.easy_sharing_allowed
-    if opts.print_ordering_allowed != None:
-      properties["Printable"] = opts.print_ordering_allowed
-    if opts.originals_allowed != None:
-      properties["Originals"] = opts.originals_allowed
-    if opts.community != None:
-      properties["CommunityID"] = opts.community
+    category = 0
 
-    if opts.test:
-      return 0
-    else:
-      rsp = self.sp.smugmug.albums.create(self.session, name, category, properties)
-      # when key is supported return id and key
-      #return "%d_%s" % (rsp['Album']['id'], rsp['Album']['Key'])
-      return rsp['Album']['id']
+    if opts != None:
+      if not opts.category or opts.category == '0':
+        category = self.get_category(opts.category)
+        if opts.subcategory:
+          subcat = self.get_subcategory(category, opts.subcategory)
+          properties["SubCategoryID"] = subcat
+
+      self._set_property(properties, "Description", opts.description)
+      self._set_property(properties, "Keywords", opts.keywords)
+      self._set_property(properties, "Password", opts.gallery_password)
+      self._set_property(properties, "Public", opts.public)
+      self._set_property(properties, "Filenames", opts.show_filenames)
+      self._set_property(properties, "Comments", opts.comments_allowed)
+      self._set_property(properties, "External", opts.external_links_allowed)
+      self._set_property(properties, "EXIF", opts.show_camera_info)
+      self._set_property(properties, "Share", opts.easy_sharing_allowed)
+      self._set_property(properties, "Printable", opts.print_ordering_allowed)
+      self._set_property(properties, "Originals", opts.originals_allowed)
+      self._set_property(properties, "CommunityID", opts.community)
+
+    rsp = self.sp.smugmug.albums.create(self.session, name, category, properties)
+    # when key is supported return id and key
+    #return "%d_%s" % (rsp['Album']['id'], rsp['Album']['Key'])
+    return rsp['Album']['id']
 
   def get_categories(self):
     categories = self.sp.smugmug.categories.get(self.session)
