@@ -19,6 +19,8 @@
 import sys
 from optparse import OptionParser
 from sm_photo_tool import Smugmug
+from os import environ, path
+from config import Config
 
 class CliCommand(object):
     """ common """
@@ -27,6 +29,11 @@ class CliCommand(object):
         self.parser = OptionParser(usage)
         self._add_common_options()
         self.name = name
+
+    def _load_defaults_from_rc(self, options):
+        config = Config('/etc/sm-photo-tool/sm.conf', '.smugmugrc')
+        for (k,v) in config.get_as_dict().items():
+            options.__dict__[k] = v
 
     def _add_common_options(self):
         # add options that apply to ALL of them.
@@ -51,12 +58,18 @@ class CliCommand(object):
     def main(self):
         (self.options, self.args) = self.parser.parse_args()
 
+        self._load_defaults_from_rc(self.options)
+
         self._validate_options()
 
         if len(sys.argv) < 2:
-            print parser.error("Please enter at least 2 args")
+            print(parser.error("Please enter at least 2 args"))
 
+        # do the work
         self._do_command()
+
+    def _get_defaults(self):
+        pass
 
 
 class CreateCommand(CliCommand):
@@ -100,12 +113,15 @@ class ListCommand(CliCommand):
 
     def _do_command(self):
         # do the list work
-        smugmug = Smugmug(self.options.login, self.options.password)
+        print(self.options)
+
+        # connect to smugmug.com
+        self.smugmug = Smugmug(self.options.login, self.options.password)
 
         cmd = self.args[1]
         id = self.args[2]
         if cmd == "album":
-            smugmug.list_files(id, None, None)
+            self.smugmug.list_files(id, None, None)
         elif cmd == "gallery":
             print("gallery")
         else:
