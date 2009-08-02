@@ -103,13 +103,13 @@ class ListCommand(CliCommand):
     def __init__(self):
         usage = "usage: %prog build [options]"
         CliCommand.__init__(self, "list", usage)
-        self.valid_options = ["album", "gallery"]
+        self.valid_options = ["album", "galleries"]
 
         # add the list options here
         #self.parser.add_option("--album", dest="album", metavar="ALBUM",
         #    help="List the contents of an album")
-        #self.parser.add_option("--gallery", dest="gallery", metavar="GALLERY",
-        #    help="List the contents of a gallery")
+        #self.parser.add_option("--galleries", dest="gallery", metavar="GALLERY",
+        #    help="List the contents of a galleries")
 
     def _do_command(self):
         # do the list work
@@ -119,18 +119,21 @@ class ListCommand(CliCommand):
         self.smugmug = Smugmug(self.options.login, self.options.password)
 
         cmd = self.args[1]
-        id = self.args[2]
+        if len(self.args) > 2:
+            id = self.args[2]
+
         if cmd == "album":
             self.smugmug.list_files(id, None, None)
-        elif cmd == "gallery":
-            print("gallery")
+        elif cmd == "galleries":
+            self.smugmug.list_galleries(None, None)
         else:
             print("foobar")
 
     def _validate_options(self):
         if len(self.args) < 3:
-            print("ERROR: requires album or gallery")
-            sys.exit(1)
+            if self.args[1] != "galleries":
+                print("ERROR: requires album or galleries")
+                sys.exit(1)
 
         if self.args[1] not in self.valid_options:
             print("ERROR: valid options are %s" % self.valid_options)
