@@ -36,10 +36,11 @@ class CLI:
         self.cli_commands[cmd.get_name()] = cmd
         
     def _usage(self):
-        print("Usage: %s MODULENAME --help" % (os.path.basename(sys.argv[0])))
-        print("Supported modules:")
+        print("Usage: %s [options] MODULENAME --help\n" %
+            (os.path.basename(sys.argv[0])))
+        print("Supported modules:\n")
         for (name, cmd) in self.cli_commands.items():
-            print("%s - %s" % (name, cmd.parser.usage))
+            print("%-14s %s" % (name, cmd.parser.description))
 
     def main(self):
         if len(sys.argv) < 2 or not self.cli_commands.has_key(sys.argv[1]):

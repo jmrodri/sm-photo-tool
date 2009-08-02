@@ -225,10 +225,11 @@ class Smugmug:
 
   def create_album(self, name, opts):
     properties = {}
-    category = 0
 
     if opts != None:
       if not opts.category or opts.category == '0':
+        category = 0
+      else:
         category = self.get_category(opts.category)
         if opts.subcategory:
           subcat = self.get_subcategory(category, opts.subcategory)
