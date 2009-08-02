@@ -256,8 +256,8 @@ class Smugmug:
   def get_categories(self):
     categories = self.sp.smugmug.categories.get(self.session)
     self.categories = {}
-    for category in categories:
-      self.categories[category['Title']] = category['id']
+    for category in categories['Categories']:
+      self.categories[category['Name']] = category['id']
 
   def get_category(self, category_string):
     if re.match("\d+$", category_string):
