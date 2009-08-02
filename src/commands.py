@@ -127,7 +127,8 @@ class ListCommand(CliCommand):
         elif cmd == "galleries":
             self.smugmug.list_galleries(None, None)
         else:
-            print("foobar")
+            # bail
+            sys.exit(1)
 
     def _validate_options(self):
         if len(self.args) < 3:
