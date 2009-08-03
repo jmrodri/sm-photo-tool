@@ -18,9 +18,10 @@
 
 import sys
 from optparse import OptionParser
-from sm_photo_tool import Smugmug
+from sm_photo_tool import Smugmug, LocalInformation
 from os import environ, path
 from config import Config
+import re
 
 def _set_option(options, parser, key, value):
     defval = None
@@ -37,22 +38,22 @@ def _set_option(options, parser, key, value):
 class CliCommand(object):
     """ common """
 
-    def __init__(self, name="cli", usage=None, description=None):
+    def __init__(self, name="cli", usage=None, shortdesc=None,
+            description=None):
+
+        self.shortdesc = shortdesc
+        if shortdesc is not None and description is None:
+            description = shortdesc
         self.parser = OptionParser(usage=usage, description=description)
         self._add_common_options()
         self.name = name
-        for opt in self.parser.option_list:
-            if opt.action in ["store_true", "store_false"]:
-                OPTIONS_BOOL.append(opt.dest)
 
     def _load_defaults_from_rc(self, options):
         config = Config('/etc/sm-photo-tool/sm.conf', '.smugmugrc')
-        #print("before: %s" % options)
         for (k,v) in config.get_as_dict().items():
             # if config overrides an options default value, use it.
             # if the option was passed in use it to override config.
             _set_option(options, self.parser, k, v)
-        #print("after: %s" % options)
 
     def _add_common_options(self):
         # add options that apply to ALL of them.
@@ -60,6 +61,8 @@ class CliCommand(object):
                 help="smugmug.com username")
         self.parser.add_option("--password", dest="password",
                 metavar="PASSWORD", help="smugmug.com password")
+        self.parser.add_option("--quiet", dest="quiet",
+                action="store_true", help="Don't tell us what you are doing")
 
     def _validate_options(self):
         pass
@@ -89,7 +92,8 @@ class CliCommand(object):
 class CreateCommand(CliCommand):
     def __init__(self):
         usage = "usage: %prog create [options] <gallery_name> [files...]"
-        CliCommand.__init__(self, "create", usage, "creates a new album")
+        CliCommand.__init__(self, "create", usage,
+            "creates a new gallery and uploads give files to it.")
 
         self.parser.add_option("--category", dest="category", metavar="CATEGORY",
                 help="Parent category for album")
@@ -125,6 +129,9 @@ class CreateCommand(CliCommand):
                 action="store_false",  help="disallow originals")
         self.parser.add_option("--community", dest="community",
                 metavar="COMMUNITY", help="specifies the gallery's community")
+        self.parser.add_option("--filter-regex",
+                dest="filter_regex", metavar="REGEX",
+                help="Only upload files that match. [default: %default]")
 
         self.parser.set_defaults(public=True)
         self.parser.set_defaults(show_filenames=False)
@@ -134,15 +141,37 @@ class CreateCommand(CliCommand):
         self.parser.set_defaults(eash_sharing_allowed=True)
         self.parser.set_defaults(print_ordering_allowed=True)
         self.parser.set_defaults(originals_allowed=True)
+        self.parser.set_defaults(filter_regex =".*\\.(jpg|gif|avi|JPG|GIF|AVI)")
+
+    def _process_files(self, local, files):
+        files_to_upload = []
+        for f in files:
+            if re.match(self.options.filter_regex, f):
+                file = path.join(local.dir, f)
+                if local.file_needs_upload(file):
+                    files_to_upload.append(file)
+        if len(files_to_upload) > 0:
+            files_to_upload.sort()
+        return files_to_upload
 
     def _do_command(self):
         # connect to smugmug.com
-        print("\"%s\"" % self.options.public)
         self.smugmug = Smugmug(self.options.login, self.options.password)
         name = self.args[1]
         # TODO: get options to album from CLI
         album_id = self.smugmug.create_album(name, self.options)
-        print("%s created with id %s" % (name, album_id))
+        print("[%s] created with id [%s]" % (name, album_id))
+        li = LocalInformation(".")
+        li.create(album_id)
+
+        # first 2 args are create & album name, the rest will
+        # be optional files
+        if len(self.args) > 2:
+            to_upload = self._process_files(li, self.args[2:])
+            if len(to_upload) > 0:
+                self.smugmug.upload_files(li.gallery_id(), self.options,
+                    to_upload, local_information=li)
+
 
     def _validate_options(self):
         if len(self.args) < 2:
@@ -152,31 +181,77 @@ class CreateCommand(CliCommand):
 
 class CreateUploadCommand(CliCommand):
     def __init__(self):
-        usage = "usage: %prog build [options]"
-        CliCommand.__init__(self, "create_upload", usage)
+        usage = "usage: %prog create_upload [options] [files...]"
+        shortdesc = "creates a new gallery and uploads the given files."
+        desc = "creates a new gallery and uploads the given files to it, " + \
+            "ignoring any previous upload state. Use this if you want to " + \
+            "do a one-time upload to a new gallery without messing up " + \
+            "future updates."
+        CliCommand.__init__(self, "create_upload", usage, shortdesc, desc)
 
 class UpdateCommand(CliCommand):
     def __init__(self):
-        usage = "usage: %prog build [options]"
-        CliCommand.__init__(self, "update", usage)
+        usage = "usage: %prog update [options]"
+        shortdesc = "Updates gallery with any new or modified images."
+        description = "Updates the gallery associated with the current " + \
+            "working directory with any new or modified images."
+        CliCommand.__init__(self, "update", usage, shortdesc, description)
 
 class FullUpdateCommand(CliCommand):
     def __init__(self):
-        usage = "usage: %prog build [options]"
-        CliCommand.__init__(self, "full_update", usage)
+        usage = "usage: %prog full_update [options]"
+        shortdesc = "Mirror an entire directory tree."
+        desc = shortdesc + "The current working directory and all its " + \
+            "subdirectories are examined for suitable image files. " + \
+            "Directories already corresponding to galleries, an update " + \
+            "is performed. Directories not already known to be created on " + \
+            "smugmug, are created there and all the appropriate image " + \
+            "files are uploaded. The new gallery is named with the " + \
+            "corresponding directory's relative path to the working " + \
+            "directory where the command was invoked. This can be " + \
+            "overridden with a file named Title in the relevant directory. " + \
+            "If this exists, its contents are used to name the new gallery."
+        CliCommand.__init__(self, "full_update", usage, shortdesc, desc)
 
 class UploadCommand(CliCommand):
     def __init__(self):
-        usage = "usage: %prog build [options]"
-        CliCommand.__init__(self, "upload", usage, "uploads files in directory")
+        usage = "usage: %prog upload <gallery_id> [options] <file...>"
+        shortdesc = "Upload the given files to the given gallery_id."
+        desc = "Simply upload the listed files to the gallery with the " + \
+            "given gallery_id. Unlike the above command, does not " + \
+            "require or update any local information."
+        CliCommand.__init__(self, "upload", usage, shortdesc, desc)
+
+        self.parser.add_option("--max_size", dest="max_size",
+                metavar="MAX_SIZE", type="int",
+                help="Maximum file size (bytes) to upload. [default: %default]")
+        self.parser.add_option("--filenames_default_captions",
+                dest="filenames_default_captions",
+                action="store_true", 
+                help="Filenames should be used as the default caption.")
+
+        self.parser.set_defaults(max_size=800000000)
+        self.parser.set_defaults(filenames_default_captions=False)
+
+    def _do_command(self):
+        album_id = self.args[1]
+        files = self.args[2:]
+        # connect to smugmug.com
+        self.smugmug = Smugmug(self.options.login, self.options.password)
+        self.smugmug.upload_files(album_id, self.options, files)
+
+    def _validate_options(self):
+        if len(self.args) < 3:
+            print("ERROR: requires album_id and filenames.")
+            sys.exit(1)
 
 class ListCommand(CliCommand):
     """ List commands """
 
     def __init__(self):
         usage = "usage: %prog list <album [albumid] | galleries>"
-        description = "Lists the files in an album, or lists available galleries"
-        CliCommand.__init__(self, "list", usage, description)
+        desc = "Lists the files in an album, or lists available galleries"
+        CliCommand.__init__(self, "list", usage, desc)
         self.valid_options = ["album", "galleries"]
 
         # add the list options here

@@ -28,7 +28,7 @@ if not (version_info[0] >= 2 and version_info[1] >= 3):
   stderr.write("Consider upgrading.  See http://www.python.org\n")
   exit(1)
 
-from optparse import OptionParser, OptionGroup
+#from optparse import OptionParser, OptionGroup
 import string
 import re
 from xmlrpclib import *
@@ -186,13 +186,13 @@ class LocalInformation:
 # "IPTC:Caption-Abstract" EXIF header field as a default caption.
 # (Try 'exiftool -Caption-Abstract="this is a test caption" foo.jpg.)
 #
-def caption(filename, opts):
+def caption(filename, filenames_default_captions):
   head, ext = path.splitext(filename)
   capfile = head + ".caption"
   if path.isfile(capfile):
     result = filename_get_data(capfile)
     return result
-  if opts.filenames_default_captions:
+  if filenames_default_captions:
     head, tail = path.split(head)
     return tail
   return None
@@ -316,8 +316,7 @@ class Smugmug:
     for file in files:
       t0 = time()
       message(opts, file + "...")
-      if not opts.test:
-        self.upload_file(albumid, file, caption(file, opts))
+      self.upload_file(albumid, file, caption(file, False))
       t1 = time()
       if local_information:
         local_information.file_uploaded(file)
@@ -515,168 +514,166 @@ def to_bool(str):
     raise 'text bool conversation'
 
 
-class Options:
-  def __init__(self, argv):
-    self.rcfile_options = defaults_from_rc()
-    self.toolName = "sm_photo_tool.py"
-    self.short_usage = "\n" + \
-      "       " +self.toolName+ " create <gallery_name> [options] [file...]\n" \
-      "       " +self.toolName+ " create_upload <gallery_name> [options] [file...]\n" \
-      "       " +self.toolName+ " update [options]\n" \
-      "       " +self.toolName+ " full_update [options]\n" \
-      "       " +self.toolName+ " upload <gallery_ID> [options] file...\n" \
-      "       " +self.toolName+ " list <gallery_ID>\n" \
-      "       " +self.toolName+ " galleries\n"
-    self.parser = OptionParser(
-      self.short_usage +
-      "\n"
-      "Create smugmug galleries and upload files to galleries.\n"
-      "Also mirror directory trees onto smugmug and keep galleries up to date.\n"
-      "\n"
-      +self.toolName+ " create <gallery_name> -- creates a new gallery and uploads the \n"
-      "given files to it.\n"
-      "\n"
-      +self.toolName+ " create_upload <gallery_name> -- creates a new gallery and uploads the \n"
-      "  given files to it, ignoring any previous upload state.  Use this if you\n"
-      "  Want to do a 1-time upload to a new gallery without messing up future updates.\n"
-      "\n"
-      "" +self.toolName+ " update -- Updates the smugmug gallery associated with the \n"
-      "working directory with any images that are either new or modified since\n"
-      "creation or the last update\n"
-      "\n"
-      +self.toolName+ " full_update [options] -- Mirror an entire directory tree on \n"
-      "smugmug.  The current working directory and all it's subdirectories are \n"
-      "examined for image suitable image files.  Directories already \n"
-      "corresponding to smugmug galleries, an update is performed.  Directories \n"
-      "not already known to be created on smugmug, are created there and all \n"
-      "the appropriate image files are uploaded.  The new gallery is named with \n"
-      "the corresponding directory's relative path to the working directory where \n"
-      "the command was invoked.  This can be overridden with a file named Title in the \n"
-      "relevant directory.  If this exists, it's contents are used to name the new \n"
-      "gallery.\n"
-      "\n"
-      +self.toolName+ " upload <gallery_ID> [options] file...-- Simply upload the\n"
-      "listed files to the smugmug gallery with the given gallery_id.  Unlike\n"
-      "the above command, does not require or update any local information.\n"
-      "\n\n"
-      +self.toolName+ " accepts a number of command line options.  The default for \n"
-      "any option can be specified in the a .sm_toolrc file in the user's home \n"
-      "directory.  The format of lines in that file is:\n"
-      "  <option_name>: <value>\n"
-      "For example:\n"
-      "  login: joe@photographer.com\n"
-      "  password: hotdog\n"
-      "  public: True\n"
-      "changes the default so that new galleries are public unless --no-public is \n"
-      "given on the command line.  Notice that for boolean options, a default of \n"
-      "True, yes, false, or no can be given  for the first given name of the \n"
-      "option (the one without the ""no-"" prefix.).  Option values can cover \n"
-      "more than one line.  \\ acts as a line continuation character."
-      "\n\n"
-      "Captions for specific images can be specified by files.  Suppose that \n"
-      "xxxx.jpg is to be uploaded and that xxxx.caption exists in the same \n"
-      "directory.  Then the contents of this file will be used to caption \n"
-      "xxxx.jpg when it is uploaded")
-      
-    group = OptionGroup(self.parser,
-                        "Common options",
-                        "These apply to all functions")
-    self.add_string_option(group, 'login', help="REQUIRED")
-    self.add_string_option(group, "password", help="REQUIRED")
-    self.add_bool_option(group, "quiet", help="Don't tell us what you are doing")
-    self.add_bool_option(group, "test",
-                         help="Don't actually create galleries or upload files.")
-    self.parser.add_option_group(group)
-
-    group = OptionGroup(self.parser,
-                        "Create options",
-                        "Only relevant when albums are created")
-    self.add_string_option(group, "category")
-    self.add_string_option(group, "subcategory")
-    self.add_string_option(group, "description")
-    self.add_string_option(group, "keywords")
-    self.add_string_option(group, "gallery_password")
-    self.add_bool_option(group, "public")
-    self.add_bool_option(group, "show_filenames")
-    self.add_bool_option(group, "comments_allowed", default=True)
-    self.add_bool_option(group, "external_links_allowed", default=True)
-    self.add_bool_option(group, "show_camera_info", default=True)
-    self.add_bool_option(group, "easy_sharing_allowed", default=True)
-    self.add_bool_option(group, "print_ordering_allowed", default=True)
-    self.add_bool_option(group, "originals_allowed")
-    self.add_string_option(group, "community")
-    self.parser.add_option_group(group)
-
-    group = OptionGroup(self.parser,
-                        "Upload options",
-                        "Only relevant when files are uploaded")
-    self.add_bool_option(group, "filenames_default_captions")
-    self.add_string_option(group, "max_size",
-                           default="800000000",
-                           help="Maximum file size (bytes) to upload."
-                                "  Default: 800000000.")
-    self.add_string_option(group, "filter_regular_expression",
-                           help="Only upload files that match. "
-                                "By default, all .jpg and .gif files are "
-                                "eligible.",
-                           default=".*\\.(jpg|gif|avi|JPG|GIF|AVI)")
-    self.parser.add_option_group(group)
-
-    self.options, self.args = self.parser.parse_args(argv)
-    if not (self.options.login and self.options.password):
-      error("No login and/or password.  Both are required")
-
-
-  def help(self):
-    error("Usage: " + self.short_usage +
-          "\n       " +self.toolName+ " --help for complete documentaton\n")
-
-  def add_bool_option(self, x, name, *args, **kwargs):
-    try:
-      kwargs['default'] = to_bool(self.rcfile_options[name])
-    except:
-      pass
-    if not kwargs.has_key("default"):
-      kwargs['default'] = False
-    kwargs['help'] = "Default: %s" % (kwargs['default'])
-    kwargs['action'] = 'store_true'
-    x.add_option('--'+name, *args, **kwargs)
-    kwargs['action'] = 'store_false'
-    del kwargs['help']
-    x.add_option('--no-'+name, *args, **kwargs)
-
-  def add_string_option(self, x, name, *args, **kwargs):
-    try:
-      kwargs['default'] = self.rcfile_options[name]
-    except:
-      pass
-    x.add_option('--'+name, *args, **kwargs)
+#class Options:
+#  def __init__(self, argv):
+#    self.rcfile_options = defaults_from_rc()
+#    self.toolName = "sm_photo_tool.py"
+#    self.short_usage = "\n" + \
+#      "       " +self.toolName+ " create <gallery_name> [options] [file...]\n" \
+#      "       " +self.toolName+ " create_upload <gallery_name> [options] [file...]\n" \
+#      "       " +self.toolName+ " update [options]\n" \
+#      "       " +self.toolName+ " full_update [options]\n" \
+#      "       " +self.toolName+ " upload <gallery_ID> [options] file...\n" \
+#      "       " +self.toolName+ " list <gallery_ID>\n" \
+#      "       " +self.toolName+ " galleries\n"
+#    self.parser = OptionParser(
+#      self.short_usage +
+#      "\n"
+#      "Create smugmug galleries and upload files to galleries.\n"
+#      "Also mirror directory trees onto smugmug and keep galleries up to date.\n"
+#      "\n"
+#      +self.toolName+ " create <gallery_name> -- creates a new gallery and uploads the \n"
+#      "given files to it.\n"
+#      "\n"
+#      +self.toolName+ " create_upload <gallery_name> -- creates a new gallery and uploads the \n"
+#      "  given files to it, ignoring any previous upload state.  Use this if you\n"
+#      "  Want to do a 1-time upload to a new gallery without messing up future updates.\n"
+#      "\n"
+#      "" +self.toolName+ " update -- Updates the smugmug gallery associated with the \n"
+#      "working directory with any images that are either new or modified since\n"
+#      "creation or the last update\n"
+#      "\n"
+#      +self.toolName+ " full_update [options] -- Mirror an entire directory tree on \n"
+#      "smugmug.  The current working directory and all it's subdirectories are \n"
+#      "examined for image suitable image files.  Directories already \n"
+#      "corresponding to smugmug galleries, an update is performed.  Directories \n"
+#      "not already known to be created on smugmug, are created there and all \n"
+#      "the appropriate image files are uploaded.  The new gallery is named with \n"
+#      "the corresponding directory's relative path to the working directory where \n"
+#      "the command was invoked.  This can be overridden with a file named Title in the \n"
+#      "relevant directory.  If this exists, it's contents are used to name the new \n"
+#      "gallery.\n"
+#      "\n"
+#      +self.toolName+ " upload <gallery_ID> [options] file...-- Simply upload the\n"
+#      "listed files to the smugmug gallery with the given gallery_id.  Unlike\n"
+#      "the above command, does not require or update any local information.\n"
+#      "\n\n"
+#      +self.toolName+ " accepts a number of command line options.  The default for \n"
+#      "any option can be specified in the a .sm_toolrc file in the user's home \n"
+#      "directory.  The format of lines in that file is:\n"
+#      "  <option_name>: <value>\n"
+#      "For example:\n"
+#      "  login: joe@photographer.com\n"
+#      "  password: hotdog\n"
+#      "  public: True\n"
+#      "changes the default so that new galleries are public unless --no-public is \n"
+#      "given on the command line.  Notice that for boolean options, a default of \n"
+#      "True, yes, false, or no can be given  for the first given name of the \n"
+#      "option (the one without the ""no-"" prefix.).  Option values can cover \n"
+#      "more than one line.  \\ acts as a line continuation character."
+#      "\n\n"
+#      "Captions for specific images can be specified by files.  Suppose that \n"
+#      "xxxx.jpg is to be uploaded and that xxxx.caption exists in the same \n"
+#      "directory.  Then the contents of this file will be used to caption \n"
+#      "xxxx.jpg when it is uploaded")
+#      
+#    group = OptionGroup(self.parser,
+#                        "Common options",
+#                        "These apply to all functions")
+#    self.add_string_option(group, 'login', help="REQUIRED")
+#    self.add_string_option(group, "password", help="REQUIRED")
+#    self.add_bool_option(group, "quiet", help="Don't tell us what you are doing")
+#    self.parser.add_option_group(group)
+#
+#    group = OptionGroup(self.parser,
+#                        "Create options",
+#                        "Only relevant when albums are created")
+#    self.add_string_option(group, "category")
+#    self.add_string_option(group, "subcategory")
+#    self.add_string_option(group, "description")
+#    self.add_string_option(group, "keywords")
+#    self.add_string_option(group, "gallery_password")
+#    self.add_bool_option(group, "public")
+#    self.add_bool_option(group, "show_filenames")
+#    self.add_bool_option(group, "comments_allowed", default=True)
+#    self.add_bool_option(group, "external_links_allowed", default=True)
+#    self.add_bool_option(group, "show_camera_info", default=True)
+#    self.add_bool_option(group, "easy_sharing_allowed", default=True)
+#    self.add_bool_option(group, "print_ordering_allowed", default=True)
+#    self.add_bool_option(group, "originals_allowed")
+#    self.add_string_option(group, "community")
+#    self.parser.add_option_group(group)
+#
+#    group = OptionGroup(self.parser,
+#                        "Upload options",
+#                        "Only relevant when files are uploaded")
+#    self.add_bool_option(group, "filenames_default_captions")
+#    self.add_string_option(group, "max_size",
+#                           default="800000000",
+#                           help="Maximum file size (bytes) to upload."
+#                                "  Default: 800000000.")
+#    self.add_string_option(group, "filter_regular_expression",
+#                           help="Only upload files that match. "
+#                                "By default, all .jpg and .gif files are "
+#                                "eligible.",
+#                           default=".*\\.(jpg|gif|avi|JPG|GIF|AVI)")
+#    self.parser.add_option_group(group)
+#
+#    self.options, self.args = self.parser.parse_args(argv)
+#    if not (self.options.login and self.options.password):
+#      error("No login and/or password.  Both are required")
+#
+#
+#  def help(self):
+#    error("Usage: " + self.short_usage +
+#          "\n       " +self.toolName+ " --help for complete documentaton\n")
+#
+#  def add_bool_option(self, x, name, *args, **kwargs):
+#    try:
+#      kwargs['default'] = to_bool(self.rcfile_options[name])
+#    except:
+#      pass
+#    if not kwargs.has_key("default"):
+#      kwargs['default'] = False
+#    kwargs['help'] = "Default: %s" % (kwargs['default'])
+#    kwargs['action'] = 'store_true'
+#    x.add_option('--'+name, *args, **kwargs)
+#    kwargs['action'] = 'store_false'
+#    del kwargs['help']
+#    x.add_option('--no-'+name, *args, **kwargs)
+#
+#  def add_string_option(self, x, name, *args, **kwargs):
+#    try:
+#      kwargs['default'] = self.rcfile_options[name]
+#    except:
+#      pass
+#    x.add_option('--'+name, *args, **kwargs)
 
 def create(smugmug, name, dir, opts):
   album_id = smugmug.create_album(name, opts)
   li = LocalInformation(dir)
   li.create(album_id)
 
-def update_dir(smugmug, dir, opts, files):
-  li = LocalInformation(dir)
-  
-  files_to_upload = []
-  for f in files:
-    if re.match(opts.filter_regular_expression, f):
-      file = path.join(dir, f)
-      if li.file_needs_upload(file):
-        files_to_upload.append(file)
-  if len(files_to_upload) > 0:
-    files_to_upload.sort()
-    smugmug.upload_files(li.gallery_id(), opts, files_to_upload,
-                         local_information=li)
+#def update_dir(smugmug, dir, opts, files):
+#  li = LocalInformation(dir)
+#  
+#  files_to_upload = []
+#  for f in files:
+#    if re.match(opts.filter_regular_expression, f):
+#      file = path.join(dir, f)
+#      if li.file_needs_upload(file):
+#        files_to_upload.append(file)
+#  if len(files_to_upload) > 0:
+#    files_to_upload.sort()
+#    smugmug.upload_files(li.gallery_id(), opts, files_to_upload,
+#                         local_information=li)
 
 
-def create_update(name, options):
-  opts = options.options
-  smugmug = Smugmug(opts.login, opts.password)
-  create(smugmug, name, ".", opts)
-  update_dir(smugmug, ".", opts, options.args)
+#def create_update(name, options):
+#  opts = options.options
+#  smugmug = Smugmug(opts.login, opts.password)
+#  create(smugmug, name, ".", opts)
+#  update_dir(smugmug, ".", opts, options.args)
   
 def create_upload(name, options):
   opts = options.options
@@ -719,53 +716,53 @@ def full_update(options):
         update_dir(smugmug, root, opts, files)
         break
 
-def listalbum(album_id, options):
-  '''List all images in the given album.'''
-  opts = options.options
-  rest = options.args
-  smugmug = Smugmug(opts.login, opts.password)
-  smugmug.list_files(album_id, opts, rest)
+#def listalbum(album_id, options):
+#  '''List all images in the given album.'''
+#  opts = options.options
+#  rest = options.args
+#  smugmug = Smugmug(opts.login, opts.password)
+#  smugmug.list_files(album_id, opts, rest)
 
-def listgalleries(options):
-  '''List all albums owned by this session.'''
-  opts = options.options
-  rest = options.args
-  smugmug = Smugmug(opts.login, opts.password)
-  smugmug.list_galleries(opts, rest)
+#def listgalleries(options):
+#  '''List all albums owned by this session.'''
+#  opts = options.options
+#  rest = options.args
+#  smugmug = Smugmug(opts.login, opts.password)
+#  smugmug.list_galleries(opts, rest)
 
 
-def main():
-  from sys import argv, exit
-
-  if len(argv) < 2:
-    Options([]).help()
-  elif argv[1] == 'create_upload':
-    if len(argv) < 3:
-      Options([]).help()
-    create_upload(argv[2], Options(argv[3:]))
-  elif argv[1] == 'create':
-    if len(argv) < 3:
-      Options([]).help()
-    create_update(argv[2], Options(argv[3:]))
-  elif argv[1] == 'upload':
-    if len(argv) < 3:
-      Options([]).help()
-    upload(argv[2], Options(argv[3:]))
-  elif argv[1] == 'list':
-    if len(argv) < 3:
-      Options([]).help()
-    listalbum(argv[2], Options(argv[3:]))
-  elif argv[1] == 'galleries':
-    listgalleries(Options(argv[3:]))
-  elif argv[1] == 'update':
-    update(Options(argv[2:]))
-  elif argv[1] == 'full_update':
-    full_update(Options(argv[2:]))
-  elif argv[1] == '--help':
-    Options(argv[1:])
-  else:
-    stderr.write("Unknown command/options %s" % argv[1]);
-    Options([]).help()
-
-if __name__ == "__main__":
-  main()
+#def main():
+#  from sys import argv, exit
+#
+#  if len(argv) < 2:
+#    Options([]).help()
+#  elif argv[1] == 'create_upload':
+#    if len(argv) < 3:
+#      Options([]).help()
+#    create_upload(argv[2], Options(argv[3:]))
+#  elif argv[1] == 'create':
+#    if len(argv) < 3:
+#      Options([]).help()
+#    create_update(argv[2], Options(argv[3:]))
+#  elif argv[1] == 'upload':
+#    if len(argv) < 3:
+#      Options([]).help()
+#    upload(argv[2], Options(argv[3:]))
+#  elif argv[1] == 'list':
+#    if len(argv) < 3:
+#      Options([]).help()
+#    listalbum(argv[2], Options(argv[3:]))
+#  elif argv[1] == 'galleries':
+#    listgalleries(Options(argv[3:]))
+#  elif argv[1] == 'update':
+#    update(Options(argv[2:]))
+#  elif argv[1] == 'full_update':
+#    full_update(Options(argv[2:]))
+#  elif argv[1] == '--help':
+#    Options(argv[1:])
+#  else:
+#    stderr.write("Unknown command/options %s" % argv[1]);
+#    Options([]).help()
+#
+#if __name__ == "__main__":
+#  main()
