@@ -20,6 +20,7 @@ import sys
 from optparse import OptionParser
 from sm_photo_tool import Smugmug, LocalInformation
 from os import environ, path
+import os
 from config import Config
 import re
 
@@ -197,6 +198,32 @@ class UpdateCommand(CliCommand):
             "working directory with any new or modified images."
         CliCommand.__init__(self, "update", usage, shortdesc, description)
 
+        self.parser.add_option("--filter-regex",
+                dest="filter_regex", metavar="REGEX",
+                help="Only upload files that match. [default: %default]")
+        self.parser.set_defaults(filter_regex =".*\\.(jpg|gif|avi|JPG|GIF|AVI)")
+
+    def _process_files(self, local, files):
+        files_to_upload = []
+        for f in files:
+            if re.match(self.options.filter_regex, f):
+                file = path.join(local.dir, f)
+                if local.file_needs_upload(file):
+                    files_to_upload.append(file)
+        if len(files_to_upload) > 0:
+            files_to_upload.sort()
+        return files_to_upload
+
+    def _do_command(self):
+        # connect to smugmug.com
+        self.smugmug = Smugmug(self.options.login, self.options.password)
+
+        li = LocalInformation(".")
+        to_upload = self._process_files(li, os.listdir("."))
+        if len(to_upload) > 0:
+            self.smugmug.upload_files(li.gallery_id(), self.options,
+                to_upload, local_information=li)
+
 class FullUpdateCommand(CliCommand):
     def __init__(self):
         usage = "usage: %prog full_update [options]"
@@ -288,6 +315,3 @@ class ListCommand(CliCommand):
         if self.args[1] not in self.valid_options:
             print("ERROR: valid options are %s" % self.valid_options)
             sys.exit(1)
-
-class GalleriesCommand(CliCommand):
-    pass
