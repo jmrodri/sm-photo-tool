@@ -374,7 +374,7 @@ class Smugmug:
     data = filename_get_data(filename)
     fields.append(['ByteCount', str(len(data))])
     fields.append(['MD5Sum', md5.new(data).hexdigest()])
-    fields.append(['AlbumID', albumid])
+    fields.append(['AlbumID', str(albumid)])
     fields.append(['SessionID', self.session])
     fields.append(['ResponseType', 'XML-RPC'])
     if caption:
@@ -649,10 +649,10 @@ def to_bool(str):
 #      pass
 #    x.add_option('--'+name, *args, **kwargs)
 
-def create(smugmug, name, dir, opts):
-  album_id = smugmug.create_album(name, opts)
-  li = LocalInformation(dir)
-  li.create(album_id)
+#def create(smugmug, name, dir, opts):
+#  album_id = smugmug.create_album(name, opts)
+#  li = LocalInformation(dir)
+#  li.create(album_id)
 
 #def update_dir(smugmug, dir, opts, files):
 #  li = LocalInformation(dir)
@@ -675,23 +675,23 @@ def create(smugmug, name, dir, opts):
 #  create(smugmug, name, ".", opts)
 #  update_dir(smugmug, ".", opts, options.args)
   
-def create_upload(name, options):
-  opts = options.options
-  rest = options.args
-  smugmug = Smugmug(opts.login, opts.password)
-  album_id = "%d" % smugmug.create_album(name, opts)
-  smugmug.upload_files(album_id, opts, rest)
+#def create_upload(name, options):
+#  opts = options.options
+#  rest = options.args
+#  smugmug = Smugmug(opts.login, opts.password)
+#  album_id = "%d" % smugmug.create_album(name, opts)
+#  smugmug.upload_files(album_id, opts, rest)
 
-def upload(album_id, options):
-  opts = options.options
-  rest = options.args
-  smugmug = Smugmug(opts.login, opts.password)
-  smugmug.upload_files(album_id, opts, rest)
+#def upload(album_id, options):
+#  opts = options.options
+#  rest = options.args
+#  smugmug = Smugmug(opts.login, opts.password)
+#  smugmug.upload_files(album_id, opts, rest)
 
-def update(options):
-  opts = options.options
-  smugmug = Smugmug(opts.login, opts.password)
-  update_dir(smugmug, ".", opts, os.listdir("."))
+#def update(options):
+#  opts = options.options
+#  smugmug = Smugmug(opts.login, opts.password)
+#  update_dir(smugmug, ".", opts, os.listdir("."))
 
 def full_update(options):
   opts = options.options

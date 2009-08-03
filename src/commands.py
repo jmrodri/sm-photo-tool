@@ -93,8 +93,12 @@ class CliCommand(object):
 class CreateCommand(CliCommand):
     def __init__(self):
         usage = "usage: %prog create [options] <gallery_name> [files...]"
-        CliCommand.__init__(self, "create", usage,
-            "creates a new gallery and uploads give files to it.")
+        shortdesc = "creates a new gallery and uploads the given files."
+        desc = "creates a new gallery and uploads the given files to it, " + \
+            "ignoring any previous upload state.\n" + \
+            "Use the --upload option if you want to do a one-time upload " + \
+            "to a new gallery without messing up future updates."
+        CliCommand.__init__(self, "create", usage, shortdesc, desc)
 
         self.parser.add_option("--category", dest="category", metavar="CATEGORY",
                 help="Parent category for album")
@@ -133,6 +137,9 @@ class CreateCommand(CliCommand):
         self.parser.add_option("--filter-regex",
                 dest="filter_regex", metavar="REGEX",
                 help="Only upload files that match. [default: %default]")
+        self.parser.add_option("--upload", dest="upload",
+                action="store_true",  
+                help="upload images, ignoring previous upload state")
 
         self.parser.set_defaults(public=True)
         self.parser.set_defaults(show_filenames=False)
@@ -142,6 +149,7 @@ class CreateCommand(CliCommand):
         self.parser.set_defaults(eash_sharing_allowed=True)
         self.parser.set_defaults(print_ordering_allowed=True)
         self.parser.set_defaults(originals_allowed=True)
+        self.parser.set_defaults(upload=False)
         self.parser.set_defaults(filter_regex =".*\\.(jpg|gif|avi|JPG|GIF|AVI)")
 
     def _process_files(self, local, files):
@@ -162,33 +170,28 @@ class CreateCommand(CliCommand):
         # TODO: get options to album from CLI
         album_id = self.smugmug.create_album(name, self.options)
         print("[%s] created with id [%s]" % (name, album_id))
-        li = LocalInformation(".")
-        li.create(album_id)
 
-        # first 2 args are create & album name, the rest will
-        # be optional files
-        if len(self.args) > 2:
-            to_upload = self._process_files(li, self.args[2:])
-            if len(to_upload) > 0:
-                self.smugmug.upload_files(li.gallery_id(), self.options,
-                    to_upload, local_information=li)
+        # now upload/update any supplied files
+        if self.options.upload:
+            if len(self.args) > 2:
+                to_upload = self.args[2:]
+                self.smugmug.upload_files(album_id, self.options, to_upload)
+        else:
+            li = LocalInformation(".")
+            li.create(album_id)
 
+            # first 2 args are create & album name, the rest will
+            # be optional files
+            if len(self.args) > 2:
+                to_upload = self._process_files(li, self.args[2:])
+                if len(to_upload) > 0:
+                    self.smugmug.upload_files(album_id, self.options,
+                        to_upload, local_information=li)
 
     def _validate_options(self):
         if len(self.args) < 2:
             print("ERROR: requires album name")
             sys.exit(1)
-
-
-class CreateUploadCommand(CliCommand):
-    def __init__(self):
-        usage = "usage: %prog create_upload [options] [files...]"
-        shortdesc = "creates a new gallery and uploads the given files."
-        desc = "creates a new gallery and uploads the given files to it, " + \
-            "ignoring any previous upload state. Use this if you want to " + \
-            "do a one-time upload to a new gallery without messing up " + \
-            "future updates."
-        CliCommand.__init__(self, "create_upload", usage, shortdesc, desc)
 
 class UpdateCommand(CliCommand):
     def __init__(self):
