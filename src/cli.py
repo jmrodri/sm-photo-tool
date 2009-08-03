@@ -28,9 +28,9 @@ class CLI:
                     issubclass(clazz, commands.CliCommand):
 
                 cmd = clazz()
-                self.cli_commands[cmd.get_name()] = cmd 
-
-        self._add_command(commands.ListCommand())
+                # ignore the base class
+                if cmd.get_name() != "cli":
+                    self.cli_commands[cmd.get_name()] = cmd 
 
     def _add_command(self, cmd):
         self.cli_commands[cmd.get_name()] = cmd
@@ -40,7 +40,7 @@ class CLI:
             (os.path.basename(sys.argv[0])))
         print("Supported modules:\n")
         for (name, cmd) in self.cli_commands.items():
-            print("%-14s %s" % (name, cmd.parser.description))
+            print("%-14s %-25s" % (name, cmd.shortdesc))
 
     def main(self):
         if len(sys.argv) < 2 or not self.cli_commands.has_key(sys.argv[1]):
