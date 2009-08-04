@@ -1,0 +1,28 @@
+1.13 Finish rename to 'sm_photo_tool.py'
+     Fix ".caption" file loading
+     Add "list" command to list images in a given gallery
+     Add "galleries" command to list gallery ids
+     Send 'messages' to stdout
+     (patch courtesy of Patrick Tullmann)
+
+1.12 albumid written incorrectly to gallery file causing img uploads to fail
+
+1.11 bug: 1819595 - fix session bug. Add spaces after all commas.
+     change url for XMLRPC api.
+
+1.10 Small bug fix for Windows (open file with "rb" mode)
+
+1.9 Handle corrupt data files, add forced upload option.
+
+1.8 Update .JPG and .GIF by default as well
+
+1.7 Follow new API documentation.  Create properties work!  Send byte count
+    so incomplete uploads don't get processed.  XXX What about checksums?
+
+1.6 Fix bug with listdir
+
+1.5 Fix bug with --public and --no-public
+
+1.4 Fix bug with boolean options and gallery creation
+
+1.3 Document Title feature
