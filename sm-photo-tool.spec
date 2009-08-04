@@ -1,5 +1,5 @@
 Name:           sm-photo-tool
-Version:        1.14
+Version:        1.15
 Release:        1
 Summary:        Smugmug client
 Group:          Applications/Multimedia
@@ -38,6 +38,9 @@ rm -rf %{buildroot}
 %{_usr}/share/doc/%{name}-%{version}/smugmugrc
 
 %changelog
+* Mon Aug 03 2009 jesus m rodriguez <jesusr@redhat.com> 1.15-1
+- new package
+
 * Tue Mar 18 2007 Jesus Rodriguez <jmrodri at gmail dot com> 1.12-1
 -  albumid written incorrectly to gallery file causing img uploads to fail
 * Mon Mar 17 2007 Jesus Rodriguez <jmrodri at gmail dot com> 1.11-1
