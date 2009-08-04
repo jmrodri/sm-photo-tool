@@ -311,6 +311,7 @@ class FullUpdateCommand(CliCommand):
     def _do_command(self):
         # connect to smugmug.com
         self.smugmug = Smugmug(self.options.login, self.options.password)
+        album_id = None
 
         for root, dirs, files in os.walk("."):
             try:
