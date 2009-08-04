@@ -1,4 +1,4 @@
-# commands.py - commands used to by sm_photo_tool
+# commands.py - commands used to by sm_wrapper
 #
 # Copyright (C) 2007-2009 Jesus M. Rodriguez
 #
@@ -18,8 +18,8 @@
 
 import sys
 from optparse import OptionParser
-from sm_photo_tool import Smugmug, LocalInformation
-import sm_photo_tool
+from sm_wrapper import Smugmug, LocalInformation
+import sm_wrapper
 from os import environ, path
 import os
 from config import Config
@@ -325,7 +325,7 @@ class FullUpdateCommand(CliCommand):
                     if not li.exists():
                         title_file = path.join(root, "Title")
                         if path.isfile(title_file):
-                            name = sm_photo_tool.filename_get_line(title_file)
+                            name = sm_wrapper.filename_get_line(title_file)
                         else:
                             name = root[2:] # strip off initial ./ or .\
                         # create(smugmug, name, root, opts)
