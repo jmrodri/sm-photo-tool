@@ -401,18 +401,18 @@ class Smugmug:
   #  file = ['Image', filename, data]
   #  self.put("upload.smugmug.com", filename, fields, [file])
 
-  def put(self, host, selector, fields, files):
-    h = httplib.HTTP(host)
-    h.putrequest('PUT', '/' + selector.split('/')[1])
-    for (hdr, value) in fields:
-        h.putheader(hdr, value)
-    h.endheaders()
-    file = files[0]
-    h.send(file[2])
-    errcode, errmsg, headers = h.getreply()
-    result = h.file.read()
-    h.close()
-    return result
+  #def put(self, host, selector, fields, files):
+  #  h = httplib.HTTP(host)
+  #  h.putrequest('PUT', '/' + selector.split('/')[1])
+  #  for (hdr, value) in fields:
+  #      h.putheader(hdr, value)
+  #  h.endheaders()
+  #  file = files[0]
+  #  h.send(file[2])
+  #  errcode, errmsg, headers = h.getreply()
+  #  result = h.file.read()
+  #  h.close()
+  #  return result
 
   def post_multipart(self, host, selector, fields, files):
     """
@@ -468,50 +468,50 @@ class Smugmug:
     return content_type, body
 
 
-def defaults_from_rc():
-  from os import environ, path
+#def defaults_from_rc():
+#  from os import environ, path
+#
+#  result = {}
+#  rcfile = path.join(environ['HOME'], '.sm_toolrc')
+#
+#  # Try the older .smugmugrc, just to avoid pissing off "customers"
+#  if not path.isfile(rcfile):
+#    rcfile = path.join(environ['HOME'],'.smugmugrc')
+#    if not path.isfile(rcfile):
+#      return result
+#
+#  f = file(rcfile, "rU")
+#  try:
+#    option = None
+#    for lwithnl in f:
+#      l = lwithnl[:-1]
+#      if l[-1] != "\\":
+#        has_continuation = False
+#      else:
+#        has_continuation = True
+#        l = l[:-1]
+#      if option:
+#        value += l
+#      else:
+#        colon_index = string.find(l, ":")
+#        if colon_index != -1:
+#          option = l[0:colon_index]
+#          value = l[colon_index+1:]
+#      if not has_continuation and option:
+#        result[string.strip(option)] = string.strip(value)
+#        option = None
+#  finally:
+#    f.close()
+#    return result
 
-  result = {}
-  rcfile = path.join(environ['HOME'], '.sm_toolrc')
-
-  # Try the older .smugmugrc, just to avoid pissing off "customers"
-  if not path.isfile(rcfile):
-    rcfile = path.join(environ['HOME'],'.smugmugrc')
-    if not path.isfile(rcfile):
-      return result
-
-  f = file(rcfile, "rU")
-  try:
-    option = None
-    for lwithnl in f:
-      l = lwithnl[:-1]
-      if l[-1] != "\\":
-        has_continuation = False
-      else:
-        has_continuation = True
-        l = l[:-1]
-      if option:
-        value += l
-      else:
-        colon_index = string.find(l, ":")
-        if colon_index != -1:
-          option = l[0:colon_index]
-          value = l[colon_index+1:]
-      if not has_continuation and option:
-        result[string.strip(option)] = string.strip(value)
-        option = None
-  finally:
-    f.close()
-    return result
-
-def to_bool(str):
-  str = string.lower(str)
-  if str == "true" or str == 'yes':
-    return True
-  elif str == 'false' or str == 'no':
-    return False
-  else:
-    raise 'text bool conversation'
+#def to_bool(str):
+#  str = string.lower(str)
+#  if str == "true" or str == 'yes':
+#    return True
+#  elif str == 'false' or str == 'no':
+#    return False
+#  else:
+#    raise 'text bool conversation'
 
 
 #class Options:
@@ -693,28 +693,28 @@ def to_bool(str):
 #  smugmug = Smugmug(opts.login, opts.password)
 #  update_dir(smugmug, ".", opts, os.listdir("."))
 
-def full_update(options):
-  opts = options.options
-  smugmug = Smugmug(opts.login, opts.password)
-  opts = options.options
-  for root, dirs, files in os.walk("."):
-    try:
-      dirs.remove("SMUGMUG_INFO")
-    except:
-      pass
-    li = LocalInformation(root)
-    # Look for at least one matching file before making directory
-    for file in files:
-      if re.match(opts.filter_regular_expression, file):
-        if not li.exists():
-          title_file = path.join(root, "Title")
-          if path.isfile(title_file):
-            name = filename_get_line(title_file)
-          else:
-            name = root[2:] # strip of initial ./ or .\
-          create(smugmug, name, root, opts)
-        update_dir(smugmug, root, opts, files)
-        break
+#def full_update(options):
+#  opts = options.options
+#  smugmug = Smugmug(opts.login, opts.password)
+#  opts = options.options
+#  for root, dirs, files in os.walk("."):
+#    try:
+#      dirs.remove("SMUGMUG_INFO")
+#    except:
+#      pass
+#    li = LocalInformation(root)
+#    # Look for at least one matching file before making directory
+#    for file in files:
+#      if re.match(opts.filter_regular_expression, file):
+#        if not li.exists():
+#          title_file = path.join(root, "Title")
+#          if path.isfile(title_file):
+#            name = filename_get_line(title_file)
+#          else:
+#            name = root[2:] # strip of initial ./ or .\
+#          create(smugmug, name, root, opts)
+#        update_dir(smugmug, root, opts, files)
+#        break
 
 #def listalbum(album_id, options):
 #  '''List all images in the given album.'''
