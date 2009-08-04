@@ -1,4 +1,4 @@
-# sm_photo_tool.py - Smugmug API wrapper
+# sm_wrapper.py - Smugmug API wrapper
 #
 # Copyright (C) 2007-2009 Jesus M. Rodriguez
 # Copyright (C) 2004 John C. Ruttenberg
