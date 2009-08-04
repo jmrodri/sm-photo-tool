@@ -38,16 +38,16 @@ def error(string):
 def message(opts, string):
     from sys import stdout
     if opts:
-         if not opts.quiet:
-                stdout.write(string)
+        if not opts.quiet:
+            stdout.write(string)
     else:
-         stdout.write(string)
+        stdout.write(string)
 
 def minutes_seconds(seconds):
-        if seconds < 60:
-                return "%d" % seconds
-        else:
-                return "%d:%02d" % (seconds / 60, seconds % 60)
+    if seconds < 60:
+        return "%d" % seconds
+    else:
+        return "%d:%02d" % (seconds / 60, seconds % 60)
 
 def filename_get_line(name):
     f = file(name, "rU")
@@ -123,8 +123,7 @@ class LocalInformation:
                 count = 1
 
         filename_put_string(infofile, "%d %d %d\n" % (time(),
-                                                                                                 os.stat(filename).st_size,
-                                                                                                 count))
+            os.stat(filename).st_size, count))
 
     def file_upload_count(self, filename):
         head, tail = path.split(filename)
@@ -160,7 +159,7 @@ def caption(filename, filenames_default_captions):
     return None
 
 def get_content_type(filename):
-        return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+    return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
 
 class Smugmug:
     def __init__(self, account, passwd):
@@ -182,8 +181,8 @@ class Smugmug:
         self.sp.smugmug.logout(self.session)
 
     def _set_property(self, props, name, opt):
-         if opt != None:
-                props[name] = opt
+        if opt != None:
+            props[name] = opt
 
     def create_album(self, name, opts):
         properties = {}
@@ -264,7 +263,7 @@ class Smugmug:
             size = stat(file).st_size
             if size > max_size:
                 message(opts, "%s size %d greater than %d.  Not uploading\n" %
-                                (file, size, max_size))
+                    (file, size, max_size))
             else:
                 files.append(file)
                 sizes[file] = size
@@ -306,16 +305,17 @@ class Smugmug:
     # List all the images in the given album
     def list_files(self, albumid, opts, args):
         # Get IDs in album
-        resp = self.sp.smugmug.images.get(self.session, albumid) #XXX use Heavy version?
+        resp = self.sp.smugmug.images.get(self.session, albumid)
         imageIDs = resp['Images']
 
         for imgHandle in imageIDs:
             imgID = imgHandle['id']
-            imgKey = imgHandle['Key'] #XXX key not necessary when logged in?
+            imgKey = imgHandle['Key']
             resp = self.sp.smugmug.images.getInfo(self.session, imgID, imgKey)
             img = resp['Image']
             message(opts, "%d: %s (%d x %d):%s\n" %
-                            (imgID, img['FileName'], img['Width'], img['Height'], img['Caption']))
+                (imgID, img['FileName'], img['Width'], img['Height'],
+                 img['Caption']))
 
     # List all the albums/galleries the current user has
     def list_galleries(self, opts, arg):
@@ -342,8 +342,8 @@ class Smugmug:
         self.post_multipart("upload.smugmug.com", "/photos/xmladd.mg", fields, [file])
     def post_multipart(self, host, selector, fields, files):
         """
-        Post fields and files to an http host as multipart/form-data.  fields is a
-        sequence of (name, value) elements for regular form fields.  files is a
+        Post fields and files to an http host as multipart/form-data. fields is a
+        sequence of (name, value) elements for regular form fields. files is a
         sequence of (name, filename, value) elements for data to be uploaded as
         files. Returns the server's response page.
         """
