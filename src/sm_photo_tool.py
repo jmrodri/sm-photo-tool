@@ -10,7 +10,7 @@
 #
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
@@ -138,8 +138,8 @@ class LocalInformation:
             return int(count_s)
 
 #
-# Get the caption for a given filename.    If a ".caption" file exists
-# for the file to upload, use the contents of that file.    Otherwise,
+# Get the caption for a given filename.  If a ".caption" file exists
+# for the file to upload, use the contents of that file.  Otherwise,
 # if the filenames-are-default-captions bool is set, use the name of the
 # file as the caption.
 #
@@ -259,11 +259,11 @@ class Smugmug:
         files = []
         for file in args:
             if not path.isfile(file):
-                message(opts,"%s is not a file.    Not uploading.\n" % file)
+                message(opts,"%s is not a file.  Not uploading.\n" % file)
                 continue
             size = stat(file).st_size
             if size > max_size:
-                message(opts, "%s size %d greater than %d.    Not uploading\n" %
+                message(opts, "%s size %d greater than %d.  Not uploading\n" %
                                 (file, size, max_size))
             else:
                 files.append(file)
@@ -285,14 +285,14 @@ class Smugmug:
                 bytes_per_second = sizes[file] / seconds
                 total_xfered_bytes += sizes[file]
                 estimated_remaining_seconds = \
-                                                                        (total_size - total_xfered_bytes) / bytes_per_second
+                    (total_size - total_xfered_bytes) / bytes_per_second
                 message(opts, "[OK] %d bytes %d seconds %dKB/sec ETA %s\n" % (
                     sizes[file],
                     seconds,
                     bytes_per_second / 1000,
                     minutes_seconds(estimated_remaining_seconds)))
             except:
-                pass            
+                pass
 
         total_seconds = time() - t
         try:
@@ -316,7 +316,7 @@ class Smugmug:
             img = resp['Image']
             message(opts, "%d: %s (%d x %d):%s\n" %
                             (imgID, img['FileName'], img['Width'], img['Height'], img['Caption']))
-                                                                             
+
     # List all the albums/galleries the current user has
     def list_galleries(self, opts, arg):
         # Get IDs in album
@@ -342,8 +342,8 @@ class Smugmug:
         self.post_multipart("upload.smugmug.com", "/photos/xmladd.mg", fields, [file])
     def post_multipart(self, host, selector, fields, files):
         """
-        Post fields and files to an http host as multipart/form-data.    fields is a
-        sequence of (name, value) elements for regular form fields.    files is a
+        Post fields and files to an http host as multipart/form-data.  fields is a
+        sequence of (name, value) elements for regular form fields.  files is a
         sequence of (name, filename, value) elements for data to be uploaded as
         files. Returns the server's response page.
         """
