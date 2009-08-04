@@ -72,7 +72,8 @@ class LocalInformation:
         self.smdir = path.join(dir, "SMUGMUG_INFO")
 
     def exists(self):
-        return path.isdir(self.smdir) and path.isfile(path.join(self.smdir, "gallery"))
+        return path.isdir(self.smdir) and \
+            path.isfile(path.join(self.smdir, "gallery"))
 
     def create(self, gallery):
         if not path.isdir(self.smdir):
@@ -165,7 +166,8 @@ class Smugmug:
     def __init__(self, account, passwd):
         self.account = account
         self.password = passwd
-        self.sp = ServerProxy("https://api.smugmug.com/services/api/xmlrpc/1.2.1/")
+        self.sp = ServerProxy(
+            "https://api.smugmug.com/services/api/xmlrpc/1.2.1/")
         self.categories = None
         self.subcategories = None
         self.login()
@@ -185,7 +187,7 @@ class Smugmug:
             props[name] = opt
 
     def create_album(self, name, opts):
-        properties = {}
+        props = {}
 
         if opts != None:
             if not opts.category or opts.category == '0':
@@ -194,22 +196,22 @@ class Smugmug:
                 category = self.get_category(opts.category)
                 if opts.subcategory:
                     subcat = self.get_subcategory(category, opts.subcategory)
-                    properties["SubCategoryID"] = subcat
+                    props["SubCategoryID"] = subcat
 
-            self._set_property(properties, "Description", opts.description)
-            self._set_property(properties, "Keywords", opts.keywords)
-            self._set_property(properties, "Password", opts.gallery_password)
-            self._set_property(properties, "Public", opts.public)
-            self._set_property(properties, "Filenames", opts.show_filenames)
-            self._set_property(properties, "Comments", opts.comments_allowed)
-            self._set_property(properties, "External", opts.external_links_allowed)
-            self._set_property(properties, "EXIF", opts.show_camera_info)
-            self._set_property(properties, "Share", opts.easy_sharing_allowed)
-            self._set_property(properties, "Printable", opts.print_ordering_allowed)
-            self._set_property(properties, "Originals", opts.originals_allowed)
-            self._set_property(properties, "CommunityID", opts.community)
+            self._set_property(props, "Description", opts.description)
+            self._set_property(props, "Keywords", opts.keywords)
+            self._set_property(props, "Password", opts.gallery_password)
+            self._set_property(props, "Public", opts.public)
+            self._set_property(props, "Filenames", opts.show_filenames)
+            self._set_property(props, "Comments", opts.comments_allowed)
+            self._set_property(props, "External", opts.external_links_allowed)
+            self._set_property(props, "EXIF", opts.show_camera_info)
+            self._set_property(props, "Share", opts.easy_sharing_allowed)
+            self._set_property(props, "Printable", opts.print_ordering_allowed)
+            self._set_property(props, "Originals", opts.originals_allowed)
+            self._set_property(props, "CommunityID", opts.community)
 
-        rsp = self.sp.smugmug.albums.create(self.session, name, category, properties)
+        rsp = self.sp.smugmug.albums.create(self.session, name, category, props)
         return rsp['Album']['id']
 
     def get_categories(self):
@@ -235,7 +237,8 @@ class Smugmug:
         if not self.subcategories:
             self.subcategories = {}
         if not self.subcategories.has_key(category):
-            subcategories = self.sp.smugmug.subcategories.get(self.session, category)
+            subcategories = self.sp.smugmug.subcategories.get(
+                self.session, category)
             subcategory_map = {}
             for subcategory in subcategories:
                 subcategory_map[subcategory['Title']] = subcategory['SubCategoryID']
@@ -258,11 +261,11 @@ class Smugmug:
         files = []
         for file in args:
             if not path.isfile(file):
-                message(opts,"%s is not a file.  Not uploading.\n" % file)
+                message(opts,"%s is not a file. Not uploading.\n" % file)
                 continue
             size = stat(file).st_size
             if size > max_size:
-                message(opts, "%s size %d greater than %d.  Not uploading\n" %
+                message(opts, "%s size %d greater than %d. Not uploading\n" %
                     (file, size, max_size))
             else:
                 files.append(file)
@@ -339,7 +342,9 @@ class Smugmug:
             fields.append(['Caption', caption])
 
         file = ['Image', filename, data]
-        self.post_multipart("upload.smugmug.com", "/photos/xmladd.mg", fields, [file])
+        self.post_multipart("upload.smugmug.com",
+            "/photos/xmladd.mg", fields, [file])
+
     def post_multipart(self, host, selector, fields, files):
         """
         Post fields and files to an http host as multipart/form-data. fields is a
