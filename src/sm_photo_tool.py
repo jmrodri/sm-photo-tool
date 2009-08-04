@@ -22,7 +22,7 @@ import string
 import re
 from xmlrpclib import *
 import httplib, mimetypes
-import md5
+import hashlib
 import os
 from os import path
 
@@ -330,7 +330,8 @@ class Smugmug:
     fields = []
     data = filename_get_data(filename)
     fields.append(['ByteCount', str(len(data))])
-    fields.append(['MD5Sum', md5.new(data).hexdigest()])
+    #fields.append(['MD5Sum', md5.new(data).hexdigest()])
+    fields.append(['MD5Sum', hashlib.md5(data).hexdigest()])
     fields.append(['AlbumID', str(albumid)])
     fields.append(['SessionID', self.session])
     fields.append(['ResponseType', 'XML-RPC'])
