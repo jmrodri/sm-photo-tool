@@ -19,6 +19,7 @@
 import sys
 from optparse import OptionParser
 from sm_photo_tool import Smugmug, LocalInformation
+import sm_photo_tool
 from os import environ, path
 import os
 from config import Config
@@ -204,6 +205,7 @@ class UpdateCommand(CliCommand):
         self.parser.add_option("--filter-regex",
                 dest="filter_regex", metavar="REGEX",
                 help="Only upload files that match. [default: %default]")
+
         self.parser.set_defaults(filter_regex =".*\\.(jpg|gif|avi|JPG|GIF|AVI)")
 
     def _process_files(self, local, files):
@@ -242,6 +244,98 @@ class FullUpdateCommand(CliCommand):
             "overridden with a file named Title in the relevant directory. " + \
             "If this exists, its contents are used to name the new gallery."
         CliCommand.__init__(self, "full_update", usage, shortdesc, desc)
+
+        self.parser.add_option("--category", dest="category", metavar="CATEGORY",
+                help="Parent category for album")
+        self.parser.add_option("--subcategory", dest="subcategory",
+                metavar="SUBCATEGORY", help="Parent category for album")
+        self.parser.add_option("--description", dest="description",
+                metavar="DESCRIPTION", help="Gallery description")
+        self.parser.add_option("--keywords", dest="keywords",
+                metavar="KEYWORDS", help="Gallery description")
+        self.parser.add_option("--gallery_password", dest="gallery_password",
+                metavar="GALLERY_PASSWORD", help="Gallery password")
+        self.parser.add_option("--private", dest="public",
+                action="store_false",
+                help="make gallery private, [default: public]")
+        self.parser.add_option("--showfilenames", dest="show_filenames",
+                action="store_true", 
+                help="show filenames in the gallery, [default: %default]")
+        self.parser.add_option("--no-comments", dest="comments_allowed",
+                action="store_false", 
+                help="disallow comments")
+        self.parser.add_option("--no-external-links", 
+                dest="external_links_allowed", action="store_false",
+                help="disallow external links")
+        self.parser.add_option("--no-camera-info", dest="show_camera_info",
+                action="store_false", 
+                help="do not show camera info")
+        self.parser.add_option("--no-easy-sharing", dest="easy_sharing_allowed",
+                action="store_false",  help="disable easy sharing")
+        self.parser.add_option("--no-print-ordering", 
+                dest="print_ordering_allowed", action="store_false",
+                help="disable print ordering")
+        self.parser.add_option("--no-originals", dest="originals_allowed",
+                action="store_false",  help="disallow originals")
+        self.parser.add_option("--community", dest="community",
+                metavar="COMMUNITY", help="specifies the gallery's community")
+        self.parser.add_option("--filter-regex",
+                dest="filter_regex", metavar="REGEX",
+                help="Only upload files that match. [default: %default]")
+        self.parser.add_option("--upload", dest="upload",
+                action="store_true",  
+                help="upload images, ignoring previous upload state")
+
+        self.parser.set_defaults(public=True)
+        self.parser.set_defaults(show_filenames=False)
+        self.parser.set_defaults(comments_allowed=True)
+        self.parser.set_defaults(external_links_allowed=True)
+        self.parser.set_defaults(show_camera_info=True)
+        self.parser.set_defaults(eash_sharing_allowed=True)
+        self.parser.set_defaults(print_ordering_allowed=True)
+        self.parser.set_defaults(originals_allowed=True)
+        self.parser.set_defaults(upload=False)
+        self.parser.set_defaults(filter_regex =".*\\.(jpg|gif|avi|JPG|GIF|AVI)")
+
+    def _process_files(self, local, files):
+        files_to_upload = []
+        for f in files:
+            if re.match(self.options.filter_regex, f):
+                file = path.join(local.dir, f)
+                if local.file_needs_upload(file):
+                    files_to_upload.append(file)
+        if len(files_to_upload) > 0:
+            files_to_upload.sort()
+        return files_to_upload
+
+    def _do_command(self):
+        # connect to smugmug.com
+        self.smugmug = Smugmug(self.options.login, self.options.password)
+
+        for root, dirs, files in os.walk("."):
+            try:
+                dirs.remove("SMUGMUG_INFO")
+            except:
+                pass
+            li = LocalInformation(root)
+
+            for file in files:
+                if re.match(self.options.filter_regex, file):
+                    if not li.exists():
+                        title_file = path.join(root, "Title")
+                        if path.isfile(title_file):
+                            name = sm_photo_tool.filename_get_line(title_file)
+                        else:
+                            name = root[2:] # strip off initial ./ or .\
+                        # create(smugmug, name, root, opts)
+                        album_id = self.smugmug.create_album(name, self.options)
+                        li.create(album_id)
+                    # update_dir(smugmug, root, opts, files)
+                    to_upload = self._process_files(li, files)
+                    if len(to_upload) > 0:
+                        self.smugmug.upload_files(album_id, self.options,
+                            to_upload, local_information=li)
+                    break
 
 class UploadCommand(CliCommand):
     def __init__(self):
