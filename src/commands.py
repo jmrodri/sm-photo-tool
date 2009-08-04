@@ -387,7 +387,6 @@ class ListCommand(CliCommand):
 
     def _do_command(self):
         # do the list work
-        print(self.options)
 
         # connect to smugmug.com
         self.smugmug = Smugmug(self.options.login, self.options.password)
@@ -405,6 +404,10 @@ class ListCommand(CliCommand):
             sys.exit(1)
 
     def _validate_options(self):
+        if len(self.args) < 2:
+            print(self.parser.print_help())
+            sys.exit(1)
+
         if len(self.args) < 3:
             if self.args[1] != "galleries":
                 print("ERROR: requires album or galleries")
