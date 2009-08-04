@@ -1,7 +1,6 @@
 Name:           sm-photo-tool
-Source1:	version
-Version:        %(echo `awk '{ print $1 }' %{SOURCE1}`)
-Release:        %(echo `awk '{ print $2 }' %{SOURCE1}`)
+Version:        1.14
+Release:        1
 Summary:        Smugmug client
 Group:          Applications/Multimedia
 License:        GPL
@@ -27,6 +26,7 @@ install -d -m 755 %{buildroot}%{_sysconfdir}/%{name}/
 install -m 644 LICENSE.TXT %{buildroot}%{_usr}/share/doc/%{name}-%{version}/
 install -m 644 smugmugrc %{buildroot}%{_usr}/share/doc/%{name}-%{version}/
 install -m 755 sm_photo_tool.py %{buildroot}%{_usr}/bin/%{name}
+cp *.py %{buildroot}%{_usr}/share/%{name}/
 
 %clean
 rm -rf %{buildroot}
