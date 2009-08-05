@@ -42,7 +42,7 @@ rm -rf %{buildroot}
 %{_usr}/share/sm-photo-tool/*.py*
 
 %changelog
-* Tue Aug 04 2009 jesus m rodriguez <jesusr@redhat.com> 1.16-1
+* Tue Aug 04 2009 jesus m rodriguez <jesusr@redhat.com> 1.16-2
 - bump the version (jesusr@redhat.com)
 - add 1.15 release (jesusr@redhat.com)
 - remove old playpen directory (jesusr@redhat.com)
