@@ -1,5 +1,5 @@
 Name:           sm-photo-tool
-Version:        1.15
+Version:        1.16
 Release:        1
 Summary:        Smugmug client
 Group:          Applications/Multimedia
@@ -42,6 +42,17 @@ rm -rf %{buildroot}
 %{_usr}/share/sm-photo-tool/*.py*
 
 %changelog
+* Tue Aug 04 2009 jesus m rodriguez <jesusr@redhat.com> 1.16-1
+- bump the version (jesusr@redhat.com)
+- add 1.15 release (jesusr@redhat.com)
+- remove old playpen directory (jesusr@redhat.com)
+- rename commands.py -> smcommands.py (jesusr@redhat.com)
+- renamed commands.py, insert path using sys.path.insert (jesusr@redhat.com)
+- fix up %files (jesusr@redhat.com)
+- add /usr/share/sm_photo_tool path (jesusr@redhat.com)
+- copy the files from their new location (jesusr@redhat.com)
+- point to correct smugmugrc (jesusr@redhat.com)
+
 * Mon Aug 03 2009 jesus m rodriguez <jesusr@redhat.com> 1.15-1
 - new package
 
