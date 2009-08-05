@@ -18,14 +18,14 @@
 
 import sys
 import os
-import commands
+import smcommands
 
 class CLI:
     def __init__(self):
         self.cli_commands = {}
-        for clazz in commands.__dict__.values():
+        for clazz in smcommands.__dict__.values():
             if isinstance(clazz, type) and  \
-                    issubclass(clazz, commands.CliCommand):
+                    issubclass(clazz, smcommands.CliCommand):
 
                 cmd = clazz()
                 # ignore the base class

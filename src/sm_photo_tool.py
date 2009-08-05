@@ -23,7 +23,8 @@
 
 import sys
 
-sys.path.append(".", "/usr/share/sm_photo_tool")
+sys.path.insert(0, '.')
+sys.path.insert(0, '/usr/share/sm-photo-tool')
 
 from cli import CLI
 
