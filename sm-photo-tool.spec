@@ -39,6 +39,7 @@ rm -rf %{buildroot}
 %attr(755, root, root) %{_usr}/bin/%{name}
 %{_usr}/share/doc/%{name}-%{version}/LICENSE.TXT
 %{_usr}/share/doc/%{name}-%{version}/smugmugrc
+%{_usr}/share/sm-photo-tool/*.py*
 
 %changelog
 * Mon Aug 03 2009 jesus m rodriguez <jesusr@redhat.com> 1.15-1
