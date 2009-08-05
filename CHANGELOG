@@ -1,3 +1,5 @@
+1.15 Refactor the code into multiple files.
+     Changed the options a bit, removed create_upload and create_update.
 1.13 Finish rename to 'sm_photo_tool.py'
      Fix ".caption" file loading
      Add "list" command to list images in a given gallery
