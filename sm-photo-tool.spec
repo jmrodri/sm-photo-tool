@@ -1,6 +1,6 @@
 Name:           sm-photo-tool
 Version:        1.16
-Release:        1
+Release:        1%{?dist}
 Summary:        Smugmug client
 Group:          Applications/Multimedia
 License:        GPL
