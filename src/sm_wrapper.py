@@ -26,7 +26,7 @@ import hashlib
 import os
 from os import path
 
-version = "1.13"
+version = "1.16"
 # sm_photo_tool offical key:
 key = "4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ"
 
@@ -35,6 +35,17 @@ def error(string):
     stderr.write(string + "\n")
     exit(1)
 
+#def progress(opts, string):
+#    cur = 1
+#    while cur < 10:
+#        time.sleep(0.25)
+#        stdout.write("#")
+#        stdout.flush()
+#        cur += 1
+#
+#    stdout.write("\n")
+#    stdout.flush()
+
 def message(opts, string):
     from sys import stdout
     if opts:
@@ -42,6 +53,7 @@ def message(opts, string):
             stdout.write(string)
     else:
         stdout.write(string)
+    stdout.flush()
 
 def minutes_seconds(seconds):
     if seconds < 60:
