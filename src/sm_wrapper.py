@@ -366,4 +366,4 @@ class Smugmug:
         log.debug("%s: %s" % (resp.status, resp.reason))
         result = resp.read()
         h.close()
-        print("PUT: result: %s" % result)
+        log.debug("PUT: result: %s" % result)
