@@ -24,6 +24,7 @@ from os import environ, path
 import os
 from config import Config
 import re
+from log import log, setup_logging
 
 def _set_option(options, parser, key, value):
     defval = None
@@ -42,7 +43,6 @@ class CliCommand(object):
 
     def __init__(self, name="cli", usage=None, shortdesc=None,
             description=None):
-
         self.shortdesc = shortdesc
         if shortdesc is not None and description is None:
             description = shortdesc
@@ -65,6 +65,11 @@ class CliCommand(object):
                 metavar="PASSWORD", help="smugmug.com password")
         self.parser.add_option("--quiet", dest="quiet",
                 action="store_true", help="Don't tell us what you are doing")
+        self.parser.add_option("--log", dest="log_file", metavar="FILENAME",
+                help="log file name (will be overwritten)")
+        self.parser.add_option("--log-level", dest="log_level",
+                default="critical", metavar="LEvEL",
+                help="log level (debug/info/warning/error/critical)")
 
     def _validate_options(self):
         pass
@@ -77,6 +82,10 @@ class CliCommand(object):
 
     def main(self):
         (self.options, self.args) = self.parser.parse_args()
+
+        # Setup logging, this must happen early!
+        setup_logging(self.options.log_file, self.options.log_level)
+        log.debug("Running cli commands: %s" % self.name)
 
         self._load_defaults_from_rc(self.options)
 
