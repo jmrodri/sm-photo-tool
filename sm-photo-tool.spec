@@ -27,6 +27,7 @@ install -m 644 LICENSE.TXT %{buildroot}%{_usr}/share/doc/%{name}-%{version}/
 install -m 644 src/smugmugrc %{buildroot}%{_usr}/share/doc/%{name}-%{version}/
 install -m 755 src/sm_photo_tool.py %{buildroot}%{_usr}/bin/%{name}
 cp src/cli.py %{buildroot}%{_usr}/share/%{name}/
+cp src/log.py %{buildroot}%{_usr}/share/%{name}/
 cp src/smcommands.py %{buildroot}%{_usr}/share/%{name}/
 cp src/config.py %{buildroot}%{_usr}/share/%{name}/
 cp src/sm_wrapper.py %{buildroot}%{_usr}/share/%{name}/
