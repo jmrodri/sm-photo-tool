@@ -20,7 +20,9 @@ data = f.read()
 f.close()
 
 # prep HTTP PUT to upload image
-h = httplib.HTTP("upload.smugmug.com")
+#h = httplib.HTTP("upload.smugmug.com")
+h = httplib.HTTPConnection("upload.smugmug.com")
+h.connect()
 h.putrequest('PUT', "/" + filename)
 print("Content-Length: %s" % str(len(data)))
 print("Content-MD5: %s" % hashlib.md5(data).hexdigest())
@@ -41,9 +43,9 @@ h.endheaders()
 h.send(data)
 
 # response output
-errcode, errmsg, headers = h.getreply()
-print("%s: %s - %s" % (errcode, errmsg, str(headers)))
-result = h.file.read()
+resp = h.getresponse()
+print("%s: %s" % (resp.status, resp.reason))
+result = resp.read()
 h.close()
 print("PUT: result: %s" % result)
 
