@@ -25,6 +25,7 @@ import httplib, mimetypes
 import hashlib
 import os
 from os import path
+from log import log
 
 version = "1.16"
 # sm_photo_tool offical key:
@@ -342,65 +343,27 @@ class Smugmug:
             message(opts, "%9d: %s\n" % (alb['id'], alb['Title']))
 
     def upload_file(self, albumid, filename, caption=None):
-        fields = []
         data = filename_get_data(filename)
-        fields.append(['ByteCount', str(len(data))])
-        #fields.append(['MD5Sum', md5.new(data).hexdigest()])
-        fields.append(['MD5Sum', hashlib.md5(data).hexdigest()])
-        fields.append(['AlbumID', str(albumid)])
-        fields.append(['SessionID', self.session])
-        fields.append(['ResponseType', 'XML-RPC'])
+
+        # prep HTTP PUT to upload image
+        h = httplib.HTTPConnection("upload.smugmug.com")
+        h.connect()
+        h.putrequest('PUT', "/" + filename)
+        h.putheader('Content-Length', str(len(data)))
+        h.putheader('Content-MD5', hashlib.md5(data).hexdigest())
+        h.putheader('X-Smug-SessionID', self.session)
+        h.putheader('X-Smug-Version', '1.2.1')
+        h.putheader('X-Smug-ResponseType', 'Xml-RPC')
+        h.putheader('X-Smug-AlbumID', str(albumid))
+        h.putheader('X-Smug-FileName', filename)
         if caption:
-            fields.append(['Caption', caption])
-
-        file = ['Image', filename, data]
-        self.post_multipart("upload.smugmug.com",
-            "/photos/xmladd.mg", fields, [file])
-
-    def post_multipart(self, host, selector, fields, files):
-        """
-        Post fields and files to an http host as multipart/form-data. fields is a
-        sequence of (name, value) elements for regular form fields. files is a
-        sequence of (name, filename, value) elements for data to be uploaded as
-        files. Returns the server's response page.
-        """
-        content_type, body = self.encode_multipart_formdata(fields, files)
-        h = httplib.HTTP(host)
-        h.putrequest('POST', selector)
-        h.putheader('content-type', content_type)
-        h.putheader('content-length', str(len(body)))
+            h.putheader('X-Smug-Caption', caption)
         h.endheaders()
-        h.send(body)
-        errcode, errmsg, headers = h.getreply()
-        result = h.file.read()
-        h.close()
-        return result
+        h.send(data)
 
-    def encode_multipart_formdata(self, fields, files):
-        """
-        fields is a sequence of (name, value) elements for regular form fields.
-        files is a sequence of (name, filename, value) elements for data to be
-        uploaded as files Return (content_type, body) ready for httplib.HTTP
-        instance
-        """
-        BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
-        CRLF = '\r\n'
-        L = []
-        for (key, value) in fields:
-            L.append('--' + BOUNDARY)
-            L.append('Content-Disposition: form-data; name="%s"' % key)
-            L.append('')
-            L.append(value)
-        for (key, filename, value) in files:
-            L.append('--' + BOUNDARY)
-            L.append('Content-Disposition: form-data; name="%s"; filename="%s"'
-                             % (key, filename))
-            L.append('Content-Type: %s' % get_content_type(filename))
-            L.append("content-length: %d" % (len(value)))
-            L.append('')
-            L.append(value)
-        L.append('--' + BOUNDARY + '--')
-        L.append('')
-        body = CRLF.join(L)
-        content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
-        return content_type, body
+        # response output
+        resp = h.getresponse()
+        log.debug("%s: %s" % (resp.status, resp.reason))
+        result = resp.read()
+        h.close()
+        print("PUT: result: %s" % result)
