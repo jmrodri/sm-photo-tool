@@ -1,6 +1,6 @@
 Name:           sm-photo-tool
-Version:        1.16
-Release:        2%{?dist}
+Version:        1.17
+Release:        1%{?dist}
 Summary:        Smugmug client
 Group:          Applications/Multimedia
 License:        GPL
@@ -42,6 +42,14 @@ rm -rf %{buildroot}
 %{_usr}/share/sm-photo-tool/*.py*
 
 %changelog
+* Fri Oct 30 2009 jesus m. rodriguez <jmrodri@gmail.com>
+- switched to using HTTP PUT instead of HTTP POST (jmrodri@gmail.com)
+- figured out how to use httplib correctly. (jmrodri@gmail.com)
+- added log file support (jmrodri@gmail.com)
+- httplib version (jmrodri@gmail.com)
+- flush the output so that we can see what's going on. (jmrodri@gmail.com)
+- removing unused old Makefile (jmrodri@gmail.com)
+
 * Tue Aug 04 2009 jesus m rodriguez <jesusr@redhat.com> 1.16-2
 - bump the version (jesusr@redhat.com)
 - add 1.15 release (jesusr@redhat.com)
