@@ -1,5 +1,5 @@
 Name:           sm-photo-tool
-Version:        1.18
+Version:        1.19
 Release:        1%{?dist}
 Summary:        Smugmug client
 Group:          Applications/Multimedia
@@ -43,7 +43,7 @@ rm -rf %{buildroot}
 %{_usr}/share/sm-photo-tool/*.py*
 
 %changelog
-* Fri Oct 30 2009 jesus m rodriguez <jesusr@redhat.com> 1.18-1
+* Fri Oct 30 2009 jesus m rodriguez <jesusr@redhat.com> 1.19-1
 - add log.py to the list of files to copy (jesusr@redhat.com)
 
 * Fri Oct 30 2009 jesus m. rodriguez <jmrodri@gmail.com>
