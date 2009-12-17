@@ -160,7 +160,7 @@ class CreateCommand(CliCommand):
         self.parser.set_defaults(print_ordering_allowed=True)
         self.parser.set_defaults(originals_allowed=True)
         self.parser.set_defaults(upload=False)
-        self.parser.set_defaults(filter_regex =".*\\.(jpg|gif|avi|JPG|GIF|AVI)")
+        self.parser.set_defaults(filter_regex =".*\\.(jpg|gif|avi|m4v|mp4|JPG|GIF|AVI|M4V|MP4)")
 
     def _process_files(self, local, files):
         files_to_upload = []
