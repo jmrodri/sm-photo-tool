@@ -1,5 +1,5 @@
 Name:           sm-photo-tool
-Version:        1.19
+Version:        1.20
 Release:        1%{?dist}
 Summary:        Smugmug client
 Group:          Applications/Multimedia
@@ -43,6 +43,15 @@ rm -rf %{buildroot}
 %{_usr}/share/sm-photo-tool/*.py*
 
 %changelog
+* Mon Dec 28 2009 jesus m rodriguez <jmrodri@gmail.com> 1.20-1
+- raise SmugmugException during login. (jmrodri@gmail.com)
+- Add new options. (lccha+smphototool@immerbox.com)
+- Added new options (lccha+smphototool@immerbox.com)
+- If filename ends with +, append instead of overwriting log file
+  (lccha+smphototool@immerbox.com)
+- fix file formats (jmrodri@gmail.com)
+- allow mp4 type files (jmrodri@gmail.com)
+
 * Fri Oct 30 2009 jesus m rodriguez <jesusr@redhat.com> 1.19-1
 - add log.py to the list of files to copy (jesusr@redhat.com)
 
