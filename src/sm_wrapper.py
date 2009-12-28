@@ -176,6 +176,14 @@ def caption(filename, filenames_default_captions):
 def get_content_type(filename):
     return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
 
+class SmugmugException(Exception):
+    def __init__(self, value, code=0):
+        self.code = code
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
+
 class Smugmug:
     def __init__(self, account, passwd):
         self.account = account
@@ -186,17 +194,27 @@ class Smugmug:
             "https://api.smugmug.com/services/api/xmlrpc/1.2.1/")
         self.categories = None
         self.subcategories = None
+        self.session = None
         self.login()
 
     def __del__(self):
         self.logout()
 
     def login(self):
-        rc = self.sp.smugmug.login.withPassword(self.account, self.password, key)
-        self.session = rc["Session"]["id"]
+        try:
+            rc = self.sp.smugmug.login.withPassword(self.account, self.password, key)
+            self.session = rc["Session"]["id"]
+        except Fault, err:
+            raise SmugmugException(err.faultString, err.faultCode)
 
     def logout(self):
-        self.sp.smugmug.logout(self.session)
+        try:
+            if self.session:
+                self.sp.smugmug.logout(self.session)
+        except Fault, err:
+            # only raise the error if it is not an invalid session
+            if not error.faultCode == 3: # 3 == invalid session
+                raise SmugmugException(err.faultString, err.faultCode)
 
     def _set_property(self, props, name, opt):
         if opt != None:

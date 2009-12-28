@@ -18,7 +18,7 @@
 
 import sys
 from optparse import OptionParser
-from sm_wrapper import Smugmug, LocalInformation
+from sm_wrapper import Smugmug, LocalInformation, SmugmugException
 import sm_wrapper
 from os import environ, path
 import os
@@ -49,6 +49,7 @@ class CliCommand(object):
         self.parser = OptionParser(usage=usage, description=description)
         self._add_common_options()
         self.name = name
+        self.smugmug = None
 
     def _load_defaults_from_rc(self, options):
         config = Config('/etc/sm-photo-tool/sm.conf', '.smugmugrc')
@@ -94,8 +95,15 @@ class CliCommand(object):
         if len(sys.argv) < 2:
             print(parser.error("Please enter at least 2 args"))
 
-        # do the work
-        self._do_command()
+        try:
+            # connect to smugmug.com
+            self.smugmug = Smugmug(self.options.login, self.options.password)
+
+            # do the work
+            self._do_command()
+        except SmugmugException, e:
+            print(e.value)
+            sys.exit(1)
 
     def _get_defaults(self):
         pass
@@ -191,8 +199,6 @@ class CreateCommand(CliCommand):
         return files_to_upload
 
     def _do_command(self):
-        # connect to smugmug.com
-        self.smugmug = Smugmug(self.options.login, self.options.password)
         name = self.args[1]
         # TODO: get options to album from CLI
         album_id = self.smugmug.create_album(name, self.options)
@@ -246,8 +252,6 @@ class UpdateCommand(CliCommand):
         return files_to_upload
 
     def _do_command(self):
-        # connect to smugmug.com
-        self.smugmug = Smugmug(self.options.login, self.options.password)
 
         li = LocalInformation(".")
         to_upload = self._process_files(li, os.listdir("."))
@@ -335,8 +339,6 @@ class FullUpdateCommand(CliCommand):
         return files_to_upload
 
     def _do_command(self):
-        # connect to smugmug.com
-        self.smugmug = Smugmug(self.options.login, self.options.password)
         album_id = None
 
         for root, dirs, files in os.walk("."):
@@ -387,8 +389,6 @@ class UploadCommand(CliCommand):
     def _do_command(self):
         album_id = self.args[1]
         files = self.args[2:]
-        # connect to smugmug.com
-        self.smugmug = Smugmug(self.options.login, self.options.password)
         self.smugmug.upload_files(album_id, self.options, files)
 
     def _validate_options(self):
@@ -414,8 +414,6 @@ class ListCommand(CliCommand):
     def _do_command(self):
         # do the list work
 
-        # connect to smugmug.com
-        self.smugmug = Smugmug(self.options.login, self.options.password)
 
         cmd = self.args[1]
         if len(self.args) > 2:
