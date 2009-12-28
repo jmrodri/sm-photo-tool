@@ -26,6 +26,7 @@ import hashlib
 import os
 from os import path
 from log import log
+import getpass
 
 version = "1.16"
 # sm_photo_tool offical key:
@@ -178,6 +179,8 @@ def get_content_type(filename):
 class Smugmug:
     def __init__(self, account, passwd):
         self.account = account
+        if passwd is None:
+            passwd = getpass.getpass()
         self.password = passwd
         self.sp = ServerProxy(
             "https://api.smugmug.com/services/api/xmlrpc/1.2.1/")
@@ -223,6 +226,11 @@ class Smugmug:
             self._set_property(props, "Printable", opts.print_ordering_allowed)
             self._set_property(props, "Originals", opts.originals_allowed)
             self._set_property(props, "CommunityID", opts.community)
+            self._set_property(props, "WorldSearchable", opts.world_searchable)
+            self._set_property(props, "SmugSearchable", opts.smug_searchable)
+            self._set_property(props, "SquareThumbs", opts.square_thumbs)
+            self._set_property(props, "HideOwner", opts.hide_owner)
+            self._set_property(props, "SortMethod", opts.sort_method)
 
         rsp = self.sp.smugmug.albums.create(self.session, name, category, props)
         return rsp['Album']['id']
@@ -253,8 +261,8 @@ class Smugmug:
             subcategories = self.sp.smugmug.subcategories.get(
                 self.session, category)
             subcategory_map = {}
-            for subcategory in subcategories:
-                subcategory_map[subcategory['Title']] = subcategory['SubCategoryID']
+            for subcategory in subcategories['SubCategories']:
+                subcategory_map[subcategory['Name']] = subcategory['id']
             self.subcategories[category] = subcategory_map
 
         if not self.subcategories[category].has_key(subcategory_string):
@@ -267,7 +275,8 @@ class Smugmug:
         from os import stat
         from string import atoi
 
-        max_size = atoi(opts.max_size)
+        # max_size = atoi(opts.max_size)
+        max_size = opts.max_size
 
         total_size = 0
         sizes = {}
