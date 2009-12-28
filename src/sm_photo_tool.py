@@ -22,9 +22,11 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
 import sys
+import os
 
 sys.path.insert(0, '.')
 sys.path.insert(0, '/usr/share/sm-photo-tool')
+sys.path.insert(0, os.path.dirname(sys.argv[0]))
 
 from cli import CLI
 

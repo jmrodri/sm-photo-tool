@@ -83,11 +83,11 @@ class CliCommand(object):
     def main(self):
         (self.options, self.args) = self.parser.parse_args()
 
+        self._load_defaults_from_rc(self.options)
+
         # Setup logging, this must happen early!
         setup_logging(self.options.log_file, self.options.log_level)
         log.debug("Running cli commands: %s" % self.name)
-
-        self._load_defaults_from_rc(self.options)
 
         self._validate_options()
 
@@ -126,6 +126,14 @@ class CreateCommand(CliCommand):
         self.parser.add_option("--showfilenames", dest="show_filenames",
                 action="store_true", 
                 help="show filenames in the gallery, [default: %default]")
+        self.parser.add_option("--squarethumbs", dest="square_thumbs",
+                action="store_true",
+                help="square thumbs in the gallery, [default: %default]")
+        self.parser.add_option("--hideowner", dest="hide_owner",
+                action="store_true",
+                help="hide ownership, [default: %default]")
+        self.parser.add_option("--sortmethod", dest="sort_method",
+                help="define sort method, [default: %default]")
         self.parser.add_option("--no-comments", dest="comments_allowed",
                 action="store_false", 
                 help="disallow comments")
@@ -142,6 +150,10 @@ class CreateCommand(CliCommand):
                 help="disable print ordering")
         self.parser.add_option("--no-originals", dest="originals_allowed",
                 action="store_false",  help="disallow originals")
+        self.parser.add_option("--no-world-searchable", dest="world_searchable",
+                action="store_false",  help="disallow world searchability")
+        self.parser.add_option("--no-smug-searchable", dest="smug_searchable",
+                action="store_false",  help="disallow smug searchability")
         self.parser.add_option("--community", dest="community",
                 metavar="COMMUNITY", help="specifies the gallery's community")
         self.parser.add_option("--filter-regex",
@@ -150,6 +162,9 @@ class CreateCommand(CliCommand):
         self.parser.add_option("--upload", dest="upload",
                 action="store_true",  
                 help="upload images, ignoring previous upload state")
+        self.parser.add_option("--max_size", dest="max_size",
+                metavar="MAX_SIZE", type="int",
+                help="Maximum file size (bytes) to upload. [default: %default]")
 
         self.parser.set_defaults(public=True)
         self.parser.set_defaults(show_filenames=False)
@@ -161,6 +176,8 @@ class CreateCommand(CliCommand):
         self.parser.set_defaults(originals_allowed=True)
         self.parser.set_defaults(upload=False)
         self.parser.set_defaults(filter_regex =".*\\.(jpg|gif|avi|m4v|mp4|JPG|GIF|AVI|M4V|MP4)")
+        self.parser.set_defaults(max_size=800000000)
+        self.parser.set_defaults(sort_method="Position")
 
     def _process_files(self, local, files):
         files_to_upload = []
