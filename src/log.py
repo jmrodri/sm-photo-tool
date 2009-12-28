@@ -23,8 +23,13 @@ def setup_logging(filename, level):
 
     Specify level as a string, we'll map 'debug' to logging.DEBUG internally.
     """
+    if filename and filename.endswith("+"):
+        filemode = 'a'
+        filename = filename.rstrip('+')
+    else:
+        filemode = 'w'
     log_level = LEVELS[level.lower()]
-    logging.basicConfig(filename=filename, level=log_level, filemode='w',
+    logging.basicConfig(filename=filename, level=log_level, filemode=filemode,
             format="%(asctime)s %(name)s %(levelname)s - %(message)s (%(module)s/%(lineno)d)")
 
 log = logging.getLogger("sm-photo-tool")
