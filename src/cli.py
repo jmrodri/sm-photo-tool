@@ -36,7 +36,7 @@ class CLI:
         self.cli_commands[cmd.get_name()] = cmd
         
     def _usage(self):
-        print("\nUsage: %s [options] MODULENAME --help\n" %
+        print("\nUsage: %s MODULENAME [options] --help\n" %
             (os.path.basename(sys.argv[0])))
         print("Supported modules:\n")
         for (name, cmd) in self.cli_commands.items():
