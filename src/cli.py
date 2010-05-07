@@ -33,9 +33,11 @@ class CLI:
                     self.cli_commands[cmd.get_name()] = cmd 
 
     def _add_command(self, cmd):
+        """adds a command module to the registered list """
         self.cli_commands[cmd.get_name()] = cmd
         
     def _usage(self):
+        """print out the usage"""
         print("\nUsage: %s MODULENAME [options] --help\n" %
             (os.path.basename(sys.argv[0])))
         print("Supported modules:\n")
