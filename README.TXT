@@ -8,7 +8,7 @@ requires an account on smugmug.com.
 
 sm-photo-tool is based on the original sm_tool.py (smugmug.py) by
 John Ruttenberg. You can find the original here:
-http://gate.chezrutt.com:8030/rutt/sm_tool/sm_tool.py
+http://gate.chezrutt.com:8030/rutt/sm_tool/sm_tool.py (dead link)
 
 I wanted to find a home for sm_tool.py and give it issue and version
 tracking.
