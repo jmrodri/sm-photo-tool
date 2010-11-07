@@ -1,5 +1,5 @@
 Name:           sm-photo-tool
-Version:        1.21
+Version:        1.22
 Release:        1%{?dist}
 Summary:        Smugmug client
 Group:          Applications/Multimedia
@@ -43,6 +43,9 @@ rm -rf %{buildroot}
 %{_usr}/share/sm-photo-tool/*.py*
 
 %changelog
+* Sun Nov 07 2010 jesus m rodriguez <jmrodri@gmail.com> 1.22-1
+- add png support (jmrodri@gmail.com)
+
 * Sat Nov 06 2010 jesus m rodriguez <jmrodri@gmail.com> 1.21-1
 - mark link as dead (jesusr@redhat.com)
 - documenation changes (jmrodri@gmail.com)
