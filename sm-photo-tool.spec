@@ -1,5 +1,5 @@
 Name:           sm-photo-tool
-Version:        1.20
+Version:        1.21
 Release:        1%{?dist}
 Summary:        Smugmug client
 Group:          Applications/Multimedia
@@ -43,6 +43,13 @@ rm -rf %{buildroot}
 %{_usr}/share/sm-photo-tool/*.py*
 
 %changelog
+* Sat Nov 06 2010 jesus m rodriguez <jmrodri@gmail.com> 1.21-1
+- mark link as dead (jesusr@redhat.com)
+- documenation changes (jmrodri@gmail.com)
+- Fix usage string.  [options] have to come after the MODULE.
+  (lccha+github@immerbox.com)
+- remove pointless ignore lines (jmrodri@gmail.com)
+
 * Mon Dec 28 2009 jesus m rodriguez <jmrodri@gmail.com> 1.20-1
 - raise SmugmugException during login. (jmrodri@gmail.com)
 - Add new options. (lccha+smphototool@immerbox.com)
