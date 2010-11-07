@@ -238,7 +238,7 @@ class UpdateCommand(CliCommand):
                 dest="filter_regex", metavar="REGEX",
                 help="Only upload files that match. [default: %default]")
 
-        self.parser.set_defaults(filter_regex =".*\\.(jpg|gif|avi|m4v|mp4|JPG|GIF|AVI|M4V|MP4)")
+        self.parser.set_defaults(filter_regex =".*\\.(jpg|png|gif|avi|m4v|mp4|JPG|PNG|GIF|AVI|M4V|MP4)")
 
     def _process_files(self, local, files):
         files_to_upload = []
