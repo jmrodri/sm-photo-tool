@@ -31,6 +31,7 @@ cp src/log.py %{buildroot}%{_usr}/share/%{name}/
 cp src/smcommands.py %{buildroot}%{_usr}/share/%{name}/
 cp src/config.py %{buildroot}%{_usr}/share/%{name}/
 cp src/sm_wrapper.py %{buildroot}%{_usr}/share/%{name}/
+cp src/cookietransport.py %{buildroot}%{_usr}/share/%{name}/
 
 %clean
 rm -rf %{buildroot}
