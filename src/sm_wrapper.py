@@ -27,6 +27,7 @@ import os
 from os import path
 from log import log
 import getpass
+from cookietransport import CookieTransport
 
 version = "1.16"
 # sm_photo_tool offical key:
@@ -190,8 +191,10 @@ class Smugmug:
         if passwd is None:
             passwd = getpass.getpass()
         self.password = passwd
+        self.cookie_transport = CookieTransport()
         self.sp = ServerProxy(
-            "https://api.smugmug.com/services/api/xmlrpc/1.2.1/")
+            "https://api.smugmug.com/services/api/xmlrpc/1.2.1/",
+            transport=self.cookie_transport)
         self.categories = None
         self.subcategories = None
         self.session = None
@@ -204,6 +207,7 @@ class Smugmug:
         try:
             rc = self.sp.smugmug.login.withPassword(self.account, self.password, key)
             self.session = rc["Session"]["id"]
+            #self.cookie_transport.cookies={}
         except Fault, err:
             raise SmugmugException(err.faultString, err.faultCode)
 
