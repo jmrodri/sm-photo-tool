@@ -21,7 +21,8 @@ from sys import stderr, exit
 import string
 import re
 from xmlrpclib import *
-import httplib, mimetypes
+import httplib
+import mimetypes
 import hashlib
 import os
 from os import path
@@ -32,6 +33,7 @@ from cookietransport import CookieTransport
 version = "1.16"
 # sm_photo_tool offical key:
 key = "4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ"
+
 
 def error(string):
     from sys import exit, stderr
@@ -49,6 +51,7 @@ def error(string):
 #    stdout.write("\n")
 #    stdout.flush()
 
+
 def message(opts, string):
     from sys import stdout
     if opts:
@@ -58,11 +61,13 @@ def message(opts, string):
         stdout.write(string)
     stdout.flush()
 
+
 def minutes_seconds(seconds):
     if seconds < 60:
         return "%d" % seconds
     else:
         return "%d:%02d" % (seconds / 60, seconds % 60)
+
 
 def filename_get_line(name):
     f = file(name, "rU")
@@ -70,16 +75,19 @@ def filename_get_line(name):
     f.close()
     return l[:-1]
 
+
 def filename_get_data(name):
     f = file(name, "rb")
     d = f.read()
     f.close()
     return d
 
+
 def filename_put_string(filename, string):
     f = file(filename, "w")
     f.write(string)
     f.close()
+
 
 class LocalInformation:
     def __init__(self, dir):
@@ -152,6 +160,7 @@ class LocalInformation:
             utime_s, size_s, count_s = string.split(l)
             return int(count_s)
 
+
 #
 # Get the caption for a given filename.  If a ".caption" file exists
 # for the file to upload, use the contents of that file.  Otherwise,
@@ -174,8 +183,10 @@ def caption(filename, filenames_default_captions):
         return tail
     return None
 
+
 def get_content_type(filename):
     return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+
 
 class SmugmugException(Exception):
     def __init__(self, value, code=0):
@@ -184,6 +195,7 @@ class SmugmugException(Exception):
 
     def __str__(self):
         return repr(self.value)
+
 
 class Smugmug:
     def __init__(self, account, passwd):
@@ -217,7 +229,7 @@ class Smugmug:
                 self.sp.smugmug.logout(self.session)
         except Fault, err:
             # only raise the error if it is not an invalid session
-            if not error.faultCode == 3: # 3 == invalid session
+            if not error.faultCode == 3:  # 3 == invalid session
                 raise SmugmugException(err.faultString, err.faultCode)
 
     def _set_property(self, props, name, opt):
@@ -269,7 +281,7 @@ class Smugmug:
         if not self.categories:
             self.get_categories()
 
-        if not self.categories.has_key(category_string):
+        if not category_string in self.categories:
             error("Unknown category " + category_string)
         else:
             return self.categories[category_string]
@@ -279,7 +291,7 @@ class Smugmug:
             return string.atoi(subcategory_string)
         if not self.subcategories:
             self.subcategories = {}
-        if not self.subcategories.has_key(category):
+        if not category in self.subcategories:
             subcategories = self.sp.smugmug.subcategories.get(
                 self.session, category)
             subcategory_map = {}
@@ -287,7 +299,7 @@ class Smugmug:
                 subcategory_map[subcategory['Name']] = subcategory['id']
             self.subcategories[category] = subcategory_map
 
-        if not self.subcategories[category].has_key(subcategory_string):
+        if not subcategory_string in self.subcategories[category]:
             error("Unknown subcategory " + subcategory_string)
         else:
             return self.subcategories[category][subcategory_string]
@@ -305,7 +317,7 @@ class Smugmug:
         files = []
         for file in args:
             if not path.isfile(file):
-                message(opts,"%s is not a file. Not uploading.\n" % file)
+                message(opts, "%s is not a file. Not uploading.\n" % file)
                 continue
             size = stat(file).st_size
             if size > max_size:

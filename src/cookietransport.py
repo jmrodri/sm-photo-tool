@@ -3,12 +3,13 @@
 # http://rocketscience.itteco.org/2010/01/10/sending-cookie-via-xmlrpclib/
 # by Nazar Leush
 #
-# changes added by jesus m. rodriguez 
+# changes added by jesus m. rodriguez
 #
 import xmlrpclib
 from xmlrpclib import ProtocolError
 
 from Cookie import _quote
+
 
 class CookieTransport(xmlrpclib.Transport):
 
@@ -65,4 +66,5 @@ class CookieTransport(xmlrpclib.Transport):
 
     def send_cookies(self, connection):
         if self.cookies:
-            connection.putheader("Cookie", ";".join(["%s=%s" % (k, _quote(v)) for k, v in self.cookies.iteritems()]))
+            for k, v in self.cookies.iteritems():
+                connection.putheader("Cookie", ";".join(["%s=%s" % (k, _quote(v))]))

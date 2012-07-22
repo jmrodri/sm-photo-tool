@@ -9,7 +9,7 @@
 #
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
@@ -26,17 +26,20 @@ from config import Config
 import re
 from log import log, setup_logging
 
+
 def _set_option(options, parser, key, value):
     defval = None
     curval = None
 
-    if parser.get_default_values().__dict__.has_key(key):
+    if key in parser.get_default_values().__dict__:
         defval = parser.get_default_values().__dict__[key]
-    if options.__dict__.has_key(key):
+
+    if key in options.__dict__:
         curval = options.__dict__[key]
 
     if curval == defval:
         options.__dict__[key] = value
+
 
 class CliCommand(object):
     """ common """
@@ -53,7 +56,7 @@ class CliCommand(object):
 
     def _load_defaults_from_rc(self, options):
         config = Config('/etc/sm-photo-tool/sm.conf', '.smugmugrc')
-        for (k,v) in config.get_as_dict().items():
+        for (k, v) in config.get_as_dict().items():
             # if config overrides an options default value, use it.
             # if the option was passed in use it to override config.
             _set_option(options, self.parser, k, v)
@@ -108,6 +111,7 @@ class CliCommand(object):
     def _get_defaults(self):
         pass
 
+
 class CreateCommand(CliCommand):
     def __init__(self):
         usage = "usage: %prog create [options] <gallery_name> [files...]"
@@ -118,8 +122,8 @@ class CreateCommand(CliCommand):
             "to a new gallery without messing up future updates."
         CliCommand.__init__(self, "create", usage, shortdesc, desc)
 
-        self.parser.add_option("--category", dest="category", metavar="CATEGORY",
-                help="Parent category for album")
+        self.parser.add_option("--category", dest="category",
+                metavar="CATEGORY", help="Parent category for album")
         self.parser.add_option("--subcategory", dest="subcategory",
                 metavar="SUBCATEGORY", help="Parent category for album")
         self.parser.add_option("--description", dest="description",
@@ -132,7 +136,7 @@ class CreateCommand(CliCommand):
                 action="store_false",
                 help="make gallery private, [default: public]")
         self.parser.add_option("--showfilenames", dest="show_filenames",
-                action="store_true", 
+                action="store_true",
                 help="show filenames in the gallery, [default: %default]")
         self.parser.add_option("--squarethumbs", dest="square_thumbs",
                 action="store_true",
@@ -143,23 +147,25 @@ class CreateCommand(CliCommand):
         self.parser.add_option("--sortmethod", dest="sort_method",
                 help="define sort method, [default: %default]")
         self.parser.add_option("--no-comments", dest="comments_allowed",
-                action="store_false", 
+                action="store_false",
                 help="disallow comments")
-        self.parser.add_option("--no-external-links", 
+        self.parser.add_option("--no-external-links",
                 dest="external_links_allowed", action="store_false",
                 help="disallow external links")
         self.parser.add_option("--no-camera-info", dest="show_camera_info",
-                action="store_false", 
+                action="store_false",
                 help="do not show camera info")
-        self.parser.add_option("--no-easy-sharing", dest="easy_sharing_allowed",
-                action="store_false",  help="disable easy sharing")
-        self.parser.add_option("--no-print-ordering", 
+        self.parser.add_option("--no-easy-sharing",
+                dest="easy_sharing_allowed", action="store_false",
+                help="disable easy sharing")
+        self.parser.add_option("--no-print-ordering",
                 dest="print_ordering_allowed", action="store_false",
                 help="disable print ordering")
         self.parser.add_option("--no-originals", dest="originals_allowed",
                 action="store_false",  help="disallow originals")
-        self.parser.add_option("--no-world-searchable", dest="world_searchable",
-                action="store_false",  help="disallow world searchability")
+        self.parser.add_option("--no-world-searchable",
+                dest="world_searchable", action="store_false",
+                help="disallow world searchability")
         self.parser.add_option("--no-smug-searchable", dest="smug_searchable",
                 action="store_false",  help="disallow smug searchability")
         self.parser.add_option("--community", dest="community",
@@ -168,11 +174,12 @@ class CreateCommand(CliCommand):
                 dest="filter_regex", metavar="REGEX",
                 help="Only upload files that match. [default: %default]")
         self.parser.add_option("--upload", dest="upload",
-                action="store_true",  
+                action="store_true",
                 help="upload images, ignoring previous upload state")
         self.parser.add_option("--max_size", dest="max_size",
                 metavar="MAX_SIZE", type="int",
-                help="Maximum file size (bytes) to upload. [default: %default]")
+                help="Maximum file size (bytes) to upload. " + \
+                     "[default: %default]")
 
         self.parser.set_defaults(public=True)
         self.parser.set_defaults(show_filenames=False)
@@ -183,7 +190,8 @@ class CreateCommand(CliCommand):
         self.parser.set_defaults(print_ordering_allowed=True)
         self.parser.set_defaults(originals_allowed=True)
         self.parser.set_defaults(upload=False)
-        self.parser.set_defaults(filter_regex =".*\\.(jpg|gif|avi|m4v|mp4|JPG|GIF|AVI|M4V|MP4)")
+        self.parser.set_defaults(
+            filter_regex=".*\\.(jpg|gif|avi|m4v|mp4|JPG|GIF|AVI|M4V|MP4)")
         self.parser.set_defaults(max_size=800000000)
         self.parser.set_defaults(sort_method="Position")
 
@@ -226,6 +234,7 @@ class CreateCommand(CliCommand):
             print("ERROR: requires album name")
             sys.exit(1)
 
+
 class UpdateCommand(CliCommand):
     def __init__(self):
         usage = "usage: %prog update [options]"
@@ -238,7 +247,8 @@ class UpdateCommand(CliCommand):
                 dest="filter_regex", metavar="REGEX",
                 help="Only upload files that match. [default: %default]")
 
-        self.parser.set_defaults(filter_regex =".*\\.(jpg|png|gif|avi|m4v|mp4|JPG|PNG|GIF|AVI|M4V|MP4)")
+        self.parser.set_defaults(filter_regex=".*\\.(jpg|png|gif|avi|m4v|" + \
+            "mp4|JPG|PNG|GIF|AVI|M4V|MP4)")
 
     def _process_files(self, local, files):
         files_to_upload = []
@@ -259,6 +269,7 @@ class UpdateCommand(CliCommand):
             self.smugmug.upload_files(li.gallery_id(), self.options,
                 to_upload, local_information=li)
 
+
 class FullUpdateCommand(CliCommand):
     def __init__(self):
         usage = "usage: %prog full_update [options]"
@@ -271,12 +282,13 @@ class FullUpdateCommand(CliCommand):
             "files are uploaded. The new gallery is named with the " + \
             "corresponding directory's relative path to the working " + \
             "directory where the command was invoked. This can be " + \
-            "overridden with a file named Title in the relevant directory. " + \
-            "If this exists, its contents are used to name the new gallery."
+            "overridden with a file named Title in the relevant " + \
+            "directory. If this exists, its contents are used to name " + \
+            "the new gallery."
         CliCommand.__init__(self, "full_update", usage, shortdesc, desc)
 
-        self.parser.add_option("--category", dest="category", metavar="CATEGORY",
-                help="Parent category for album")
+        self.parser.add_option("--category", dest="category",
+                metavar="CATEGORY", help="Parent category for album")
         self.parser.add_option("--subcategory", dest="subcategory",
                 metavar="SUBCATEGORY", help="Parent category for album")
         self.parser.add_option("--description", dest="description",
@@ -289,20 +301,21 @@ class FullUpdateCommand(CliCommand):
                 action="store_false",
                 help="make gallery private, [default: public]")
         self.parser.add_option("--showfilenames", dest="show_filenames",
-                action="store_true", 
+                action="store_true",
                 help="show filenames in the gallery, [default: %default]")
         self.parser.add_option("--no-comments", dest="comments_allowed",
-                action="store_false", 
+                action="store_false",
                 help="disallow comments")
-        self.parser.add_option("--no-external-links", 
+        self.parser.add_option("--no-external-links",
                 dest="external_links_allowed", action="store_false",
                 help="disallow external links")
         self.parser.add_option("--no-camera-info", dest="show_camera_info",
-                action="store_false", 
+                action="store_false",
                 help="do not show camera info")
-        self.parser.add_option("--no-easy-sharing", dest="easy_sharing_allowed",
+        self.parser.add_option("--no-easy-sharing",
+                dest="easy_sharing_allowed",
                 action="store_false",  help="disable easy sharing")
-        self.parser.add_option("--no-print-ordering", 
+        self.parser.add_option("--no-print-ordering",
                 dest="print_ordering_allowed", action="store_false",
                 help="disable print ordering")
         self.parser.add_option("--no-originals", dest="originals_allowed",
@@ -313,7 +326,7 @@ class FullUpdateCommand(CliCommand):
                 dest="filter_regex", metavar="REGEX",
                 help="Only upload files that match. [default: %default]")
         self.parser.add_option("--upload", dest="upload",
-                action="store_true",  
+                action="store_true",
                 help="upload images, ignoring previous upload state")
 
         self.parser.set_defaults(public=True)
@@ -325,7 +338,8 @@ class FullUpdateCommand(CliCommand):
         self.parser.set_defaults(print_ordering_allowed=True)
         self.parser.set_defaults(originals_allowed=True)
         self.parser.set_defaults(upload=False)
-        self.parser.set_defaults(filter_regex =".*\\.(jpg|gif|avi|m4v|mp4|JPG|GIF|AVI|M4V|MP4)")
+        self.parser.set_defaults(
+            filter_regex=".*\\.(jpg|gif|avi|m4v|mp4|JPG|GIF|AVI|M4V|MP4)")
 
     def _process_files(self, local, files):
         files_to_upload = []
@@ -355,7 +369,7 @@ class FullUpdateCommand(CliCommand):
                         if path.isfile(title_file):
                             name = sm_wrapper.filename_get_line(title_file)
                         else:
-                            name = root[2:] # strip off initial ./ or .\
+                            name = root[2:]  # strip off initial ./ or .\
                         # create(smugmug, name, root, opts)
                         album_id = self.smugmug.create_album(name, self.options)
                         li.create(album_id)
@@ -365,6 +379,7 @@ class FullUpdateCommand(CliCommand):
                         self.smugmug.upload_files(album_id, self.options,
                             to_upload, local_information=li)
                     break
+
 
 class UploadCommand(CliCommand):
     def __init__(self):
@@ -376,12 +391,12 @@ class UploadCommand(CliCommand):
         CliCommand.__init__(self, "upload", usage, shortdesc, desc)
 
         self.parser.add_option("--max_size", dest="max_size",
-                metavar="MAX_SIZE", type="int",
-                help="Maximum file size (bytes) to upload. [default: %default]")
+            metavar="MAX_SIZE", type="int",
+            help="Maximum file size (bytes) to upload. [default: %default]")
         self.parser.add_option("--filenames_default_captions",
-                dest="filenames_default_captions",
-                action="store_true", 
-                help="Filenames should be used as the default caption.")
+            dest="filenames_default_captions",
+            action="store_true",
+            help="Filenames should be used as the default caption.")
 
         self.parser.set_defaults(max_size=800000000)
         self.parser.set_defaults(filenames_default_captions=False)
@@ -396,6 +411,7 @@ class UploadCommand(CliCommand):
             print("ERROR: requires album_id and filenames.")
             sys.exit(1)
 
+
 class ListCommand(CliCommand):
     """ List commands """
 
@@ -408,12 +424,12 @@ class ListCommand(CliCommand):
         # add the list options here
         #self.parser.add_option("--album", dest="album", metavar="ALBUM",
         #    help="List the contents of an album")
-        #self.parser.add_option("--galleries", dest="gallery", metavar="GALLERY",
+        #self.parser.add_option("--galleries", dest="gallery",
+        #    metavar="GALLERY",
         #    help="List the contents of a galleries")
 
     def _do_command(self):
         # do the list work
-
 
         cmd = self.args[1]
         if len(self.args) > 2:

@@ -9,7 +9,7 @@
 #
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
@@ -19,6 +19,7 @@
 import sys
 import os
 import smcommands
+
 
 class CLI:
     def __init__(self):
@@ -30,12 +31,12 @@ class CLI:
                 cmd = clazz()
                 # ignore the base class
                 if cmd.get_name() != "cli":
-                    self.cli_commands[cmd.get_name()] = cmd 
+                    self.cli_commands[cmd.get_name()] = cmd
 
     def _add_command(self, cmd):
         """adds a command module to the registered list """
         self.cli_commands[cmd.get_name()] = cmd
-        
+
     def _usage(self):
         """print out the usage"""
         print("\nUsage: %s MODULENAME [options] --help\n" %
@@ -46,7 +47,7 @@ class CLI:
         print("")
 
     def main(self):
-        if len(sys.argv) < 2 or not self.cli_commands.has_key(sys.argv[1]):
+        if len(sys.argv) < 2 or not sys.argv[1] in self.cli_commands:
             self._usage()
             sys.exit(1)
 

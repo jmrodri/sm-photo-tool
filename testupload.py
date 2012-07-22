@@ -12,7 +12,8 @@ albumid = sys.argv[3]
 filename = 'test.jpg'
 
 client = ServerProxy("https://api.smugmug.com/services/api/xmlrpc/1.2.1/")
-session = client.smugmug.login.withPassword(sys.argv[1], sys.argv[2], "4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ")
+session = client.smugmug.login.withPassword(sys.argv[1], sys.argv[2],
+    "4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ")
 
 # read in image file
 f = file(filename, "rb")
@@ -48,4 +49,3 @@ print("%s: %s" % (resp.status, resp.reason))
 result = resp.read()
 h.close()
 print("PUT: result: %s" % result)
-

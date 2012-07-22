@@ -3,7 +3,7 @@
 # sm_photo_tool.py - update and create smugmug galleries from the command line
 #
 # Run sm_photo_tool --help for more info
-# 
+#
 # Copyright (C) 2004 John C. Ruttenberg
 # Copyright (C) 2007-2009 Jesus M. Rodriguez
 #
@@ -14,7 +14,7 @@
 #
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
