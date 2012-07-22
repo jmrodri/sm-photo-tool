@@ -1,5 +1,5 @@
 Name:           sm-photo-tool
-Version:        1.22
+Version:        1.23
 Release:        1%{?dist}
 Summary:        Smugmug client
 Group:          Applications/Multimedia
@@ -44,6 +44,12 @@ rm -rf %{buildroot}
 %{_usr}/share/sm-photo-tool/*.py*
 
 %changelog
+* Sat Jul 21 2012 jesus m. rodriguez <jmrodri@gmail.com> 1.23-1
+- pep8: line too long (80 characters) (jmrodri@gmail.com)
+- pep8 (jmrodri@gmail.com)
+- package cookietransport (jmrodri@gmail.com)
+- submit cookies when connecting via HTTPS (jmrodri@gmail.com)
+
 * Sun Nov 07 2010 jesus m rodriguez <jmrodri@gmail.com> 1.22-1
 - add png support (jmrodri@gmail.com)
 
