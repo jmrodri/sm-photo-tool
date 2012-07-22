@@ -67,4 +67,5 @@ class CookieTransport(xmlrpclib.Transport):
     def send_cookies(self, connection):
         if self.cookies:
             for k, v in self.cookies.iteritems():
-                connection.putheader("Cookie", ";".join(["%s=%s" % (k, _quote(v))]))
+                connection.putheader(
+                    "Cookie", ";".join(["%s=%s" % (k, _quote(v))]))

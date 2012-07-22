@@ -217,7 +217,8 @@ class Smugmug:
 
     def login(self):
         try:
-            rc = self.sp.smugmug.login.withPassword(self.account, self.password, key)
+            rc = self.sp.smugmug.login.withPassword(
+                self.account, self.password, key)
             self.session = rc["Session"]["id"]
             #self.cookie_transport.cookies={}
         except Fault, err:
@@ -266,7 +267,8 @@ class Smugmug:
             self._set_property(props, "HideOwner", opts.hide_owner)
             self._set_property(props, "SortMethod", opts.sort_method)
 
-        rsp = self.sp.smugmug.albums.create(self.session, name, category, props)
+        rsp = self.sp.smugmug.albums.create(self.session, name,
+            category, props)
         return rsp['Album']['id']
 
     def get_categories(self):

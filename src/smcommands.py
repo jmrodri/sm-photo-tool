@@ -371,7 +371,8 @@ class FullUpdateCommand(CliCommand):
                         else:
                             name = root[2:]  # strip off initial ./ or .\
                         # create(smugmug, name, root, opts)
-                        album_id = self.smugmug.create_album(name, self.options)
+                        album_id = self.smugmug.create_album(
+                            name, self.options)
                         li.create(album_id)
                     # update_dir(smugmug, root, opts, files)
                     to_upload = self._process_files(li, files)
