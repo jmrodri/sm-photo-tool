@@ -20,7 +20,7 @@ import sys
 from optparse import OptionParser
 from sm_wrapper import Smugmug, LocalInformation, SmugmugException
 import sm_wrapper
-from os import environ, path
+from os import path
 import os
 from config import Config
 import re
@@ -91,12 +91,12 @@ class CliCommand(object):
 
         # Setup logging, this must happen early!
         setup_logging(self.options.log_file, self.options.log_level)
-        log.debug("Running cli commands: %s" % self.name)
+        log.debug("Running cli commands: %s", self.name)
 
         self._validate_options()
 
         if len(sys.argv) < 2:
-            print(parser.error("Please enter at least 2 args"))
+            print(self.parser.error("Please enter at least 2 args"))
 
         try:
             # connect to smugmug.com
@@ -199,9 +199,9 @@ class CreateCommand(CliCommand):
         files_to_upload = []
         for f in files:
             if re.match(self.options.filter_regex, f):
-                file = path.join(local.dir, f)
-                if local.file_needs_upload(file):
-                    files_to_upload.append(file)
+                the_file = path.join(local.dir, f)
+                if local.file_needs_upload(the_file):
+                    files_to_upload.append(the_file)
         if len(files_to_upload) > 0:
             files_to_upload.sort()
         return files_to_upload
@@ -254,9 +254,9 @@ class UpdateCommand(CliCommand):
         files_to_upload = []
         for f in files:
             if re.match(self.options.filter_regex, f):
-                file = path.join(local.dir, f)
-                if local.file_needs_upload(file):
-                    files_to_upload.append(file)
+                the_file = path.join(local.dir, f)
+                if local.file_needs_upload(the_file):
+                    files_to_upload.append(the_file)
         if len(files_to_upload) > 0:
             files_to_upload.sort()
         return files_to_upload
@@ -345,9 +345,9 @@ class FullUpdateCommand(CliCommand):
         files_to_upload = []
         for f in files:
             if re.match(self.options.filter_regex, f):
-                file = path.join(local.dir, f)
-                if local.file_needs_upload(file):
-                    files_to_upload.append(file)
+                the_file = path.join(local.dir, f)
+                if local.file_needs_upload(the_file):
+                    files_to_upload.append(the_file)
         if len(files_to_upload) > 0:
             files_to_upload.sort()
         return files_to_upload
@@ -362,8 +362,8 @@ class FullUpdateCommand(CliCommand):
                 pass
             li = LocalInformation(root)
 
-            for file in files:
-                if re.match(self.options.filter_regex, file):
+            for f in files:
+                if re.match(self.options.filter_regex, f):
                     if not li.exists():
                         title_file = path.join(root, "Title")
                         if path.isfile(title_file):
@@ -434,10 +434,10 @@ class ListCommand(CliCommand):
 
         cmd = self.args[1]
         if len(self.args) > 2:
-            id = self.args[2]
+            oid = self.args[2]
 
         if cmd == "album":
-            self.smugmug.list_files(id, None, None)
+            self.smugmug.list_files(oid, None, None)
         elif cmd == "galleries":
             self.smugmug.list_galleries(None, None)
         else:

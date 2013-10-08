@@ -6,7 +6,7 @@
 # changes added by jesus m. rodriguez
 #
 import xmlrpclib
-from xmlrpclib import ProtocolError
+from xmlrpclib import ProtocolError, Fault
 
 from Cookie import _quote
 

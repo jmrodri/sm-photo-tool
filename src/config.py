@@ -1,7 +1,4 @@
-import errno
 import os
-import stat
-import time
 
 
 class Config:
@@ -40,11 +37,11 @@ class Config:
                 pairs = line.split('=')
                 self._config[pairs[0]] = pairs[1]
 
-    def get_int(self, property, default=0):
-        return int(self.get_property(property, default))
+    def get_int(self, prop, default=0):
+        return int(self.get_property(prop, default))
 
-    def get_property(self, property, default=None):
-        return self._config.get(property, default)
+    def get_property(self, prop, default=None):
+        return self._config.get(prop, default)
 
     def set_property(self, name, value):
         self.__setitem__(name, value)

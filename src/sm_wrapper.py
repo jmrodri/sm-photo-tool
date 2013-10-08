@@ -17,10 +17,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
-from sys import stderr, exit
+from sys import stderr
 import string
 import re
-from xmlrpclib import *
+from xmlrpclib import Fault, ServerProxy
 import httplib
 import mimetypes
 import hashlib
@@ -36,7 +36,6 @@ key = "4XHW8Aw7BQqbkGszuFciGZH4hMynnOxJ"
 
 
 def error(string):
-    from sys import exit, stderr
     stderr.write(string + "\n")
     exit(1)
 
@@ -88,11 +87,13 @@ def filename_put_string(filename, string):
     f.write(string)
     f.close()
 
+class LocalInformationException(Exception):
+    pass
 
 class LocalInformation:
-    def __init__(self, dir):
-        self.dir = dir
-        self.smdir = path.join(dir, "SMUGMUG_INFO")
+    def __init__(self, filedir):
+        self.dir = filedir
+        self.smdir = path.join(filedir, "SMUGMUG_INFO")
 
     def exists(self):
         return path.isdir(self.smdir) and \
@@ -108,7 +109,7 @@ class LocalInformation:
 
     def gallery_id(self):
         if not self.exists():
-            raise "No Localinformation for %s" % (dir)
+            raise LocalInformationException("No Localinformation for %s" % (self.dir))
         l = filename_get_line(path.join(self.smdir, "gallery"))
         return l
 
@@ -278,7 +279,7 @@ class Smugmug:
             self.categories[category['Name']] = category['id']
 
     def get_category(self, category_string):
-        if re.match("\d+$", category_string):
+        if re.match(r'\d+$', category_string):
             return string.atoi(category_string)
         if not self.categories:
             self.get_categories()
@@ -289,7 +290,7 @@ class Smugmug:
             return self.categories[category_string]
 
     def get_subcategory(self, category, subcategory_string):
-        if re.match("\d+$", subcategory_string):
+        if re.match(r'\d+$', subcategory_string):
             return string.atoi(subcategory_string)
         if not self.subcategories:
             self.subcategories = {}
@@ -317,37 +318,37 @@ class Smugmug:
         total_size = 0
         sizes = {}
         files = []
-        for file in args:
-            if not path.isfile(file):
-                message(opts, "%s is not a file. Not uploading.\n" % file)
+        for the_file in args:
+            if not path.isfile(the_file):
+                message(opts, "%s is not a file. Not uploading.\n" % the_file)
                 continue
-            size = stat(file).st_size
+            size = stat(the_file).st_size
             if size > max_size:
                 message(opts, "%s size %d greater than %d. Not uploading\n" %
-                    (file, size, max_size))
+                    (the_file, size, max_size))
             else:
-                files.append(file)
-                sizes[file] = size
+                files.append(the_file)
+                sizes[the_file] = size
                 total_size += size
 
         t = time()
         total_xfered_bytes = 0
 
-        for file in files:
+        for the_file in files:
             t0 = time()
-            message(opts, file + "...")
-            self.upload_file(albumid, file, caption(file, False))
+            message(opts, the_file + "...")
+            self.upload_file(albumid, the_file, caption(the_file, False))
             t1 = time()
             if local_information:
-                local_information.file_uploaded(file)
+                local_information.file_uploaded(the_file)
             seconds = t1 - t0
             try:
-                bytes_per_second = sizes[file] / seconds
-                total_xfered_bytes += sizes[file]
+                bytes_per_second = sizes[the_file] / seconds
+                total_xfered_bytes += sizes[the_file]
                 estimated_remaining_seconds = \
                     (total_size - total_xfered_bytes) / bytes_per_second
                 message(opts, "[OK] %d bytes %d seconds %dKB/sec ETA %s\n" % (
-                    sizes[file],
+                    sizes[the_file],
                     seconds,
                     bytes_per_second / 1000,
                     minutes_seconds(estimated_remaining_seconds)))
@@ -408,7 +409,7 @@ class Smugmug:
 
         # response output
         resp = h.getresponse()
-        log.debug("%s: %s" % (resp.status, resp.reason))
+        log.debug("%s: %s", resp.status, resp.reason)
         result = resp.read()
         h.close()
-        log.debug("PUT: result: %s" % result)
+        log.debug("PUT: result: %s", result)

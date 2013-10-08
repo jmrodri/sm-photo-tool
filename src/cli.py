@@ -21,7 +21,8 @@ import os
 import smcommands
 
 
-class CLI:
+class CLI(object):
+    """ Base class for all CLI """
     def __init__(self):
         self.cli_commands = {}
         for clazz in smcommands.__dict__.values():
@@ -47,6 +48,7 @@ class CLI:
         print("")
 
     def main(self):
+        """ main method for all cli command classes """
         if len(sys.argv) < 2 or not sys.argv[1] in self.cli_commands:
             self._usage()
             sys.exit(1)
