@@ -87,43 +87,32 @@ func (lc *ListCommand) validOptions(args []string) {
 		fmt.Println("ERROR: valid options are %s", lc.valid_options)
 		os.Exit(1)
 	}
+	fmt.Println("Leaving validOptions")
 }
 
 func (lc *ListCommand) doCommand(args []string) {
 	var oid string
-	cmd := args[0]
+	cmd := args[1]
 
 	if len(args) > 2 {
 		oid = args[1]
 	}
+
+	fmt.Println("cmd = " + cmd)
 
 	if cmd == "album" {
 		fmt.Println("list_files(%s)", oid)
 	} else if cmd == "galleries" {
 		fmt.Println("list_galleries()")
 	} else {
+		fmt.Println("Um why didn't we call one of the above?")
 		os.Exit(1)
 	}
 }
 
-/*
-func main() {
-	//CLI{}.run()
-	optName := getopt.StringLong("name", 'n', "", "Your name")
-	optHelp := getopt.BoolLong("help", 0, "Help")
-
-	getopt.Parse()
-	args := getopt.Args()
-
-	if *optHelp {
-		getopt.Usage()
-		os.Exit(0)
-	}
-
-	fmt.Println("Hello " + *optName + "!")
-	validOptions := []string{"album", "galleries"}
-	lcmd := ListCommand{usage: "Usage", desc: "the list command", valid_options: validOptions}
-	lcmd.validOptions(args)
-	lcmd.doCommand(args)
+func (lc *ListCommand) Go(args []string) {
+	fmt.Println("Entered Go")
+	lc.validOptions(args)
+	lc.doCommand(args)
+	fmt.Println("Leaving Go")
 }
-*/

@@ -44,6 +44,6 @@ func main() {
 	fmt.Println("Hello " + *optName + "!")
 	validOptions := []string{"album", "galleries"}
 	lcmd := ListCommand{usage: "Usage", desc: "the list command", valid_options: validOptions}
-	lcmd.validOptions(args)
-	lcmd.doCommand(args)
+	lcmd.Go(args)
+	fmt.Println("Did doCommand get called?")
 }
