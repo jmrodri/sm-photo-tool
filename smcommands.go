@@ -24,46 +24,143 @@ import (
 	"fmt"
 	"os"
 	"sort"
+
+	"github.com/pborman/getopt"
 )
 
+//var commands []CLI
+var commands map[string]CLI
+
+func GetCommands() map[string]CLI {
+	if len(commands) < 1 {
+		commands = make(map[string]CLI)
+		addCommand(commands, NewUploadCommand())
+		addCommand(commands, NewListCommand())
+		addCommand(commands, NewCreateCommand())
+	}
+	return commands
+}
+
+func addCommand(c map[string]CLI, cli CLI) {
+	c[cli.GetName()] = cli
+}
+
+type CLI interface {
+	GetName() string
+	GetShortDesc() string
+	Go([]string)
+}
+
 type CliCommand struct {
+	name      string
 	usage     string
 	shortdesc string
 	desc      string
-	name      string
 }
 
-/*
-func Init(name string, usage string, shortdesc string, description string) *CliCommand {
-	return nil
-}*/
-
 func (cc *CliCommand) addCommonOptions() {
+	getopt.StringLong("login", 'l', "", "smugmug.com username")
+	getopt.StringLong("password", 'p', "", "smugmug.com password")
+	getopt.BoolLong("quiet", 'q', "Don't tell us what you are doing")
+	getopt.StringLong("log", 0, "", "log file name (will be overwritten)")
+	getopt.StringLong("log-level", 0, "critical", "log level (debug/info/warning/error/critical")
+}
 
+/************************
+ * CreateCommand
+ ************************/
+type CreateCommand struct {
+	cli CliCommand
+}
+
+func NewCreateCommand() *CreateCommand {
+	usage := "usage: PROG create [options] <gallery_name> [files...]"
+	shortdesc := "creates a new gallery and uploads the given files."
+	desc := "creates a new gallery and uploads the given files to it, " +
+		"ignoring any previous upload state.\n" +
+		"Use the --upload option if you want to do a one-time upload " +
+		"to a new gallery without messing up future updates."
+	c := CliCommand{"create", usage, shortdesc, desc}
+	c.addCommonOptions()
+
+	return &CreateCommand{c}
+}
+
+func (cc *CreateCommand) Go(args []string) {
+	fmt.Println("Running create command")
+}
+
+func (cc *CreateCommand) GetName() string {
+	return cc.cli.name
+}
+
+func (cc *CreateCommand) GetShortDesc() string {
+	return cc.cli.shortdesc
 }
 
 /************************
  * UploadCommand
  ************************/
 type UploadCommand struct {
-	usage     string
-	shortdesc string
-	desc      string
+	cli CliCommand
+}
+
+func NewUploadCommand() *UploadCommand {
+	usage := "usage: PROG upload <gallery_id> [options] <file...>"
+	shortdesc := "Upload the given files to the given gallery_id."
+	desc := "Simply upload the listed files to the gallery with the " +
+		"given gallery_id. Unlike the above command, does not " +
+		"require or update any local information."
+
+	c := CliCommand{"upload", usage, shortdesc, desc}
+	c.addCommonOptions()
+
+	getopt.IntLong("max_size", 0, 800000000, "Maximum file size (bytes) to upload.")
+	getopt.BoolLong("filenames_default_captions", 0,
+		"Filenames should be used as the default caption.")
+
+	return &UploadCommand{c}
+}
+
+func (uc *UploadCommand) doCommand(args []string) {
+	album_id := args[1]
+	files := args[2:]
+	fmt.Println("upload_files(%d)", album_id)
+	fmt.Println(files)
+}
+
+func (uc *UploadCommand) validOptions(args []string) {
+	if len(args) < 3 {
+		fmt.Println("ERROR: requires album_id and filenames.")
+		os.Exit(1)
+	}
+}
+func (uc *UploadCommand) Go(args []string) {
+	fmt.Println("Running upload command")
+}
+
+func (uc *UploadCommand) GetName() string {
+	return uc.cli.name
+}
+
+func (uc *UploadCommand) GetShortDesc() string {
+	return uc.cli.shortdesc
 }
 
 /************************
  * ListCommand
  ************************/
 type ListCommand struct {
-	usage         string
-	desc          string
+	cli           CliCommand
 	valid_options []string
 }
 
 func NewListCommand() *ListCommand {
 	usage := "usage: PROG list <album [albumid] | galleries>"
 	desc := "Lists the files in an ablum, or lists available galleries"
-	return &ListCommand{usage, desc, []string{"album", "galleries"}}
+	c := CliCommand{"list", usage, desc, desc}
+	c.addCommonOptions()
+	return &ListCommand{c, []string{"album", "galleries"}}
 }
 
 func (lc *ListCommand) validOptions(args []string) {
@@ -95,13 +192,13 @@ func (lc *ListCommand) doCommand(args []string) {
 	cmd := args[1]
 
 	if len(args) > 2 {
-		oid = args[1]
+		oid = args[2]
 	}
 
 	fmt.Println("cmd = " + cmd)
 
 	if cmd == "album" {
-		fmt.Println("list_files(%s)", oid)
+		fmt.Println("list_files(" + oid + ")")
 	} else if cmd == "galleries" {
 		fmt.Println("list_galleries()")
 	} else {
@@ -115,4 +212,12 @@ func (lc *ListCommand) Go(args []string) {
 	lc.validOptions(args)
 	lc.doCommand(args)
 	fmt.Println("Leaving Go")
+}
+
+func (lc *ListCommand) GetName() string {
+	return lc.cli.name
+}
+
+func (lc *ListCommand) GetShortDesc() string {
+	return lc.cli.shortdesc
 }
