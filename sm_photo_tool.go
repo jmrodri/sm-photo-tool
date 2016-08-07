@@ -28,22 +28,26 @@ import (
 	"github.com/pborman/getopt"
 )
 
-func main() {
-	//CLI{}.run()
-	optName := getopt.StringLong("name", 'n', "", "Your name")
-	optHelp := getopt.BoolLong("help", 0, "Help")
+func usage() {
+	fmt.Println("\nUsage: PROG MODULENAME [options] --help")
+	fmt.Println("Supported modules:")
+	commands := GetCommands()
+	for k, v := range commands {
+		fmt.Printf("\t%-14s %-25s\n", k, v.GetShortDesc())
+	}
+}
 
+func main() {
 	getopt.Parse()
 	args := getopt.Args()
 
-	if *optHelp {
-		getopt.Usage()
-		os.Exit(0)
+	if len(args) < 2 {
+		usage()
+		os.Exit(1)
 	}
 
-	fmt.Println("Hello " + *optName + "!")
-	validOptions := []string{"album", "galleries"}
-	lcmd := ListCommand{usage: "Usage", desc: "the list command", valid_options: validOptions}
-	lcmd.Go(args)
+	fmt.Println("Getting command")
+	cmd := GetCommands()[args[1]]
+	cmd.Go(args)
 	fmt.Println("Did doCommand get called?")
 }
