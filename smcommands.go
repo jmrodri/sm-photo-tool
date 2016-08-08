@@ -45,12 +45,18 @@ func addCommand(c map[string]CLI, cli CLI) {
 	c[cli.GetName()] = cli
 }
 
+/************************
+ * CLI interface
+ ************************/
 type CLI interface {
 	GetName() string
 	GetShortDesc() string
 	Go([]string)
 }
 
+/************************
+ * CliCommand
+ ************************/
 type CliCommand struct {
 	name      string
 	usage     string
@@ -58,19 +64,33 @@ type CliCommand struct {
 	desc      string
 }
 
+func (cc *CliCommand) loadDefaultsFromRc() {
+	fmt.Println("LOAD DEFAULTS FROM LOCAL CONFIG")
+}
+
 func (cc *CliCommand) addCommonOptions() {
-	getopt.StringLong("login", 'l', "", "smugmug.com username")
+	fmt.Println("entered addCommonOptions")
+	fmt.Println(getopt.CommandLine)
+	getopt.StringLong("login", 0, "", "smugmug.com username")
 	getopt.StringLong("password", 'p', "", "smugmug.com password")
 	getopt.BoolLong("quiet", 'q', "Don't tell us what you are doing")
 	getopt.StringLong("log", 0, "", "log file name (will be overwritten)")
 	getopt.StringLong("log-level", 0, "critical", "log level (debug/info/warning/error/critical")
 }
 
+func (cc *CliCommand) GetName() string {
+	return cc.name
+}
+
+func (cc *CliCommand) GetShortDesc() string {
+	return cc.shortdesc
+}
+
 /************************
  * CreateCommand
  ************************/
 type CreateCommand struct {
-	cli CliCommand
+	CliCommand
 }
 
 func NewCreateCommand() *CreateCommand {
@@ -81,7 +101,8 @@ func NewCreateCommand() *CreateCommand {
 		"Use the --upload option if you want to do a one-time upload " +
 		"to a new gallery without messing up future updates."
 	c := CliCommand{"create", usage, shortdesc, desc}
-	c.addCommonOptions()
+	//c.addCommonOptions()
+	getopt.StringLong("category", 0, "", "Parent category for album")
 
 	return &CreateCommand{c}
 }
@@ -90,19 +111,11 @@ func (cc *CreateCommand) Go(args []string) {
 	fmt.Println("Running create command")
 }
 
-func (cc *CreateCommand) GetName() string {
-	return cc.cli.name
-}
-
-func (cc *CreateCommand) GetShortDesc() string {
-	return cc.cli.shortdesc
-}
-
 /************************
  * UploadCommand
  ************************/
 type UploadCommand struct {
-	cli CliCommand
+	CliCommand
 }
 
 func NewUploadCommand() *UploadCommand {
@@ -113,7 +126,7 @@ func NewUploadCommand() *UploadCommand {
 		"require or update any local information."
 
 	c := CliCommand{"upload", usage, shortdesc, desc}
-	c.addCommonOptions()
+	//c.addCommonOptions()
 
 	getopt.IntLong("max_size", 0, 800000000, "Maximum file size (bytes) to upload.")
 	getopt.BoolLong("filenames_default_captions", 0,
@@ -139,19 +152,11 @@ func (uc *UploadCommand) Go(args []string) {
 	fmt.Println("Running upload command")
 }
 
-func (uc *UploadCommand) GetName() string {
-	return uc.cli.name
-}
-
-func (uc *UploadCommand) GetShortDesc() string {
-	return uc.cli.shortdesc
-}
-
 /************************
  * ListCommand
  ************************/
 type ListCommand struct {
-	cli           CliCommand
+	CliCommand
 	valid_options []string
 }
 
@@ -212,12 +217,4 @@ func (lc *ListCommand) Go(args []string) {
 	lc.validOptions(args)
 	lc.doCommand(args)
 	fmt.Println("Leaving Go")
-}
-
-func (lc *ListCommand) GetName() string {
-	return lc.cli.name
-}
-
-func (lc *ListCommand) GetShortDesc() string {
-	return lc.cli.shortdesc
 }
