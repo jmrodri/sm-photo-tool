@@ -24,8 +24,6 @@ package main
 import (
 	"fmt"
 	"os"
-
-	"github.com/pborman/getopt"
 )
 
 func usage() {
@@ -38,16 +36,18 @@ func usage() {
 }
 
 func main() {
-	getopt.Parse()
-	args := getopt.Args()
+	/*
+		getopt.Parse()
+		args := getopt.Args()
+	*/
 
-	if len(args) < 2 {
+	if len(os.Args) < 2 {
 		usage()
 		os.Exit(1)
 	}
 
 	fmt.Println("Getting command")
-	cmd := GetCommands()[args[1]]
-	cmd.Go(args)
+	cmd := GetCommands()[os.Args[1]]
+	cmd.Go(os.Args[1:])
 	fmt.Println("Did doCommand get called?")
 }
