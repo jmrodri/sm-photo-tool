@@ -28,6 +28,24 @@ import (
 	"github.com/pborman/getopt"
 )
 
+/*
+ Maybe what I should do is create a factory function, given a command, return
+ the class that is associated. For example:
+*/
+func BuildCommand(name string) CLI {
+	switch name {
+	case "list":
+		return NewListCommand()
+	case "create":
+		return NewCreateCommand()
+	case "upload":
+		return NewUploadCommand()
+	default:
+		//return NewListCommand()
+		return NewCreateCommand()
+	}
+}
+
 //var commands []CLI
 var commands map[string]CLI
 
@@ -70,7 +88,6 @@ func (cc *CliCommand) loadDefaultsFromRc() {
 
 func (cc *CliCommand) addCommonOptions() {
 	fmt.Println("entered addCommonOptions")
-	fmt.Println(getopt.CommandLine)
 	getopt.StringLong("login", 0, "", "smugmug.com username")
 	getopt.StringLong("password", 'p', "", "smugmug.com password")
 	getopt.BoolLong("quiet", 'q', "Don't tell us what you are doing")
@@ -101,14 +118,40 @@ func NewCreateCommand() *CreateCommand {
 		"Use the --upload option if you want to do a one-time upload " +
 		"to a new gallery without messing up future updates."
 	c := CliCommand{"create", usage, shortdesc, desc}
-	//c.addCommonOptions()
+	c.addCommonOptions()
+
 	getopt.StringLong("category", 0, "", "Parent category for album")
+	getopt.StringLong("subcategory", 0, "", "Parent category for album")
+	getopt.StringLong("description", 0, "", "Gallery description")
+	getopt.StringLong("keywords", 0, "", "Gallery description")
+	getopt.StringLong("gallery_password", 0, "", "Gallery password")
+	getopt.BoolLong("private", 0, "", "make gallery private, [default: public]")
+	getopt.BoolLong("showfilenames", 0, "", "show filenames in the gallery, [default: true]")
+	getopt.BoolLong("squarethumbs", 0, "", "square thumbs in the gallery,, [default: false]")
+	getopt.BoolLong("hideowner", 0, "", "hide ownership, [default: false]")
+	getopt.StringLong("sortmethod", 0, "", "define sort method, [default: Position]")
+	getopt.BoolLong("no-comments", 0, "", "disallow comments")
+	getopt.BoolLong("no-external-links", 0, "", "disallow external links")
+	getopt.BoolLong("no-camera-info", 0, "", "do not show camera info")
+	getopt.BoolLong("no-easy-sharing", 0, "", "disable easy sharing")
+	getopt.BoolLong("no-print-ordering", 0, "", "disable print ordering")
+	getopt.BoolLong("no-originals", 0, "", "disable originals")
+	getopt.BoolLong("no-world-searchable", 0, "", "disable world searchability")
+	getopt.BoolLong("no-smug-searchable", 0, "", "disable smug searchability")
+	getopt.StringLong("community", 0, "", "specifies the gallery's community")
+	filter_regex_default := ".*\\.(jpg|gif|avi|m4v|mp4|JPG|GIF|AVI|M4V|MP4)"
+	getopt.StringLong("filter-regex", 0, "", "Only upload files that match. [default: %s]", filter_regex_default)
+	getopt.BoolLong("upload", 0, "", "upload images, ignoring previous upload state")
+	getopt.IntLong("max_size", 0, 800000000, "Maximum file size (bytes) to upload. [default: 800000000]")
 
 	return &CreateCommand{c}
 }
 
 func (cc *CreateCommand) Go(args []string) {
+	getopt.CommandLine.Parse(args)
+	fmt.Println(args)
 	fmt.Println("Running create command")
+	fmt.Println(getopt.GetValue("category"))
 }
 
 /************************
@@ -126,7 +169,7 @@ func NewUploadCommand() *UploadCommand {
 		"require or update any local information."
 
 	c := CliCommand{"upload", usage, shortdesc, desc}
-	//c.addCommonOptions()
+	c.addCommonOptions()
 
 	getopt.IntLong("max_size", 0, 800000000, "Maximum file size (bytes) to upload.")
 	getopt.BoolLong("filenames_default_captions", 0,
@@ -149,6 +192,7 @@ func (uc *UploadCommand) validOptions(args []string) {
 	}
 }
 func (uc *UploadCommand) Go(args []string) {
+	getopt.CommandLine.Parse(args)
 	fmt.Println("Running upload command")
 }
 
@@ -213,6 +257,7 @@ func (lc *ListCommand) doCommand(args []string) {
 }
 
 func (lc *ListCommand) Go(args []string) {
+	getopt.CommandLine.Parse(args)
 	fmt.Println("Entered Go")
 	lc.validOptions(args)
 	lc.doCommand(args)

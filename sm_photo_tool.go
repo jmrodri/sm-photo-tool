@@ -29,17 +29,14 @@ import (
 func usage() {
 	fmt.Println("\nUsage: PROG MODULENAME [options] --help")
 	fmt.Println("Supported modules:")
-	commands := GetCommands()
+	//commands := GetCommands()
+	commands = make(map[string]CLI)
 	for k, v := range commands {
 		fmt.Printf("\t%-14s %-25s\n", k, v.GetShortDesc())
 	}
 }
 
 func main() {
-	/*
-		getopt.Parse()
-		args := getopt.Args()
-	*/
 
 	if len(os.Args) < 2 {
 		usage()
@@ -47,7 +44,7 @@ func main() {
 	}
 
 	fmt.Println("Getting command")
-	cmd := GetCommands()[os.Args[1]]
+	cmd := BuildCommand(os.Args[1])
 	cmd.Go(os.Args[1:])
 	fmt.Println("Did doCommand get called?")
 }
