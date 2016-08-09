@@ -1,5 +1,5 @@
 /*
- * smcommands.go
+ * commands.go
  *
  * Copyright (C) 2016 Jesus M. Rodriguez
  *
