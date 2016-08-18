@@ -288,6 +288,7 @@ func (uc *UploadCommand) validOptions(args []string) {
 		os.Exit(1)
 	}
 }
+
 func (uc *UploadCommand) Go(args []string) {
 	getopt.CommandLine.Parse(args)
 	fmt.Println("Running upload command")
