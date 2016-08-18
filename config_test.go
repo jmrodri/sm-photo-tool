@@ -10,7 +10,7 @@ func TestGetIntReturnsInt(t *testing.T) {
 	}
 }
 
-func TestReturnsDefaultValue(t *testing.T) {
+func TestGetIntReturnsDefaultValue(t *testing.T) {
 	c := Config{make(map[string]string)}
 	c.SetProperty("age", "30")
 	if c.GetInt("number", 0) != 0 {
@@ -18,7 +18,7 @@ func TestReturnsDefaultValue(t *testing.T) {
 	}
 }
 
-func TestReturnsDefaultValue1(t *testing.T) {
+func TestHandlesTypeMismatch(t *testing.T) {
 	c := Config{make(map[string]string)}
 	c.SetProperty("age", "u")
 	if c.GetInt("age", 0) != 0 {
@@ -32,6 +32,10 @@ func TestGetProperty(t *testing.T) {
 	if c.GetProperty("name", "buck") != "joe" {
 		t.Error("expected joe")
 	}
+}
+
+func TestGetPropReturnsDefault(t *testing.T) {
+	c := Config{make(map[string]string)}
 	if c.GetProperty("last", "buck") != "buck" {
 		t.Error("expected buck")
 	}

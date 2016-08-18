@@ -50,7 +50,10 @@ func (c *Config) GetInt(prop string, defval int) int {
 }
 
 func (c *Config) GetProperty(prop string, defval string) string {
-	return c.config[prop]
+	if val, ok := c.config[prop]; ok {
+		return val
+	}
+	return defval
 }
 
 func (c *Config) SetProperty(name string, value string) {
