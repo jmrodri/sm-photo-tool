@@ -2,4 +2,4 @@ language: go
 go:
     - 1.6
 install:
-    - got get github.com/pborman/getopt
+    - go get github.com/pborman/getopt
