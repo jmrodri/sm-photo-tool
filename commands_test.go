@@ -6,7 +6,7 @@ import (
 	"github.com/pborman/getopt"
 )
 
-func TestBulidCommand(t *testing.T) {
+func TestBuildCommand(t *testing.T) {
 
 	testBuildCommand("create", t)
 	testBuildCommand("update", t)
