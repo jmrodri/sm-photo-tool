@@ -327,8 +327,8 @@ func (lc *ListCommand) validOptions(args []string) {
 	// in python this is
 	// if args[1] not in valid_options
 	i := sort.SearchStrings(lc.valid_options, args[1])
-	if i < len(lc.valid_options) && lc.valid_options[i] != args[1] {
-		fmt.Println("ERROR: valid options are %s", lc.valid_options)
+	if i >= len(lc.valid_options) || i < len(lc.valid_options) && lc.valid_options[i] != args[1] {
+		fmt.Printf("ERROR: valid options are %v\n", lc.valid_options)
 		os.Exit(1)
 	}
 	fmt.Println("Leaving validOptions")
