@@ -8,7 +8,7 @@ import (
 	"github.com/pborman/getopt"
 )
 
-func aTestBuildCommand(t *testing.T) {
+func TestBuildCommand(t *testing.T) {
 
 	testBuildCommand("create", t)
 	testBuildCommand("update", t)
@@ -47,6 +47,8 @@ func TestListCommandValidOptions(t *testing.T) {
 	handleExit("TestListCommandValidOptions", "invalid_option_between", t)
 	handleExit("TestListCommandValidOptions", "invalid_option_outside", t)
 }
+
+// utility methods
 
 func handleExit(test string, envvar string, t *testing.T) {
 	cmd := exec.Command(os.Args[0], "-test.run="+test)
