@@ -1,21 +1,30 @@
 Name:           sm-photo-tool
 Version:        1.23
-Release:        1%{?dist}
+Release:        1.git.26.3165dc8%{?dist}
 Summary:        Smugmug client
 Group:          Applications/Multimedia
 License:        GPL
 URL:            http://github.com/jmrodri/sm-photo-tool
-Source0:        %{name}-%{version}.tar.gz
+Source0: sm-photo-tool-git-26.3165dc8.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-root-%(%{__id_u} -n)
-BuildArch:      noarch
-BuildRequires:  golang
+ExclusiveArch:  %{go_arches}
+#BuildRequires:  golang
+BuildRequires:  compiler(go-compilers)
 Requires:       golang >= 1.6
+
 
 %description
 Smugmug client
 
 %prep
-%setup -q
+%setup -q -n sm-photo-tool-git-26.3165dc8
+rm -rf python
+
+%build
+%gobuild -o bin/NAME %{import_path}
+%gotest %{import_path}/package
+#go build -o %{name}
+#go test
 
 %install
 rm -rf %{buildroot}
@@ -42,7 +51,6 @@ rm -rf %{buildroot}
 %attr(755, root, root) %{_usr}/bin/%{name}
 %{_usr}/share/doc/%{name}-%{version}/LICENSE.TXT
 %{_usr}/share/doc/%{name}-%{version}/smugmugrc
-#%{_usr}/share/sm-photo-tool/*.py*
 
 %changelog
 * Sat Jul 21 2012 jesus m. rodriguez <jmrodri@gmail.com> 1.23-1
@@ -95,10 +103,12 @@ rm -rf %{buildroot}
 * Mon Aug 03 2009 jesus m rodriguez <jesusr@redhat.com> 1.15-1
 - new package
 
-* Tue Mar 18 2007 Jesus Rodriguez <jmrodri at gmail dot com> 1.12-1
+* Sun Mar 18 2007 Jesus Rodriguez <jmrodri at gmail dot com> 1.12-1
 -  albumid written incorrectly to gallery file causing img uploads to fail
-* Mon Mar 17 2007 Jesus Rodriguez <jmrodri at gmail dot com> 1.11-1
+
+* Sat Mar 17 2007 Jesus Rodriguez <jmrodri at gmail dot com> 1.11-1
 - fix bug: 1819595
 - reformat code to have spaces after all comma's
+
 * Sat Apr  1 2006 Jesus Rodriguez <jmrodri at gmail dot com> 1.10-1
 - initial rpm release
