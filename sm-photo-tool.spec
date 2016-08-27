@@ -24,7 +24,7 @@ install -d -m 755 %{buildroot}%{_usr}/share/doc/%{name}-%{version}/
 install -d -m 755 %{buildroot}%{_usr}/bin/
 install -d -m 755 %{buildroot}%{_sysconfdir}/%{name}/
 install -m 644 LICENSE.TXT %{buildroot}%{_usr}/share/doc/%{name}-%{version}/
-install -m 644 src/smugmugrc %{buildroot}%{_usr}/share/doc/%{name}-%{version}/
+install -m 644 smugmugrc %{buildroot}%{_usr}/share/doc/%{name}-%{version}/
 #install -m 755 src/sm_photo_tool.py %{buildroot}%{_usr}/bin/%{name}
 #cp src/cli.py %{buildroot}%{_usr}/share/%{name}/
 #cp src/log.py %{buildroot}%{_usr}/share/%{name}/
