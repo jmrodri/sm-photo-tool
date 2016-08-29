@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"log"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 )
@@ -13,7 +14,18 @@ type Config struct {
 }
 
 func New(global_conf string, local_conf string) (c *Config) {
-	return &Config{make(map[string]string)}
+	c = &Config{make(map[string]string)}
+
+	// read global config
+	c.readfile(global_conf)
+
+	// read local overrides
+	homedir := os.Getenv("HOME")
+	if homedir != "" && local_conf != "" {
+		c.readfile(path.Join(homedir, local_conf))
+	}
+
+	return c
 }
 
 func (c *Config) readfile(configfn string) {
@@ -45,6 +57,13 @@ func (c *Config) readfile(configfn string) {
 func (c *Config) GetInt(prop string, defval int) int {
 	if i, err := strconv.Atoi(c.config[prop]); err == nil {
 		return i
+	}
+	return defval
+}
+
+func (c *Config) GetBool(prop string, defval bool) bool {
+	if b, err := strconv.ParseBool(c.config[prop]); err == nil {
+		return b
 	}
 	return defval
 }
