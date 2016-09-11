@@ -24,8 +24,11 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/jmrodri/sm-photo-tool/cmd"
 )
 
+/*
 func usage() {
 	fmt.Println("\nUsage: PROG MODULENAME [options] --help")
 	fmt.Println("Supported modules:")
@@ -35,16 +38,12 @@ func usage() {
 		fmt.Printf("\t%-14s %-25s\n", k, v.GetShortDesc())
 	}
 }
+*/
 
 func main() {
 
-	if len(os.Args) < 2 {
-		usage()
-		os.Exit(1)
+	if err := cmd.RootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
 	}
-
-	fmt.Println("Getting command")
-	cmd := BuildCommand(os.Args[1])
-	cmd.Go(os.Args[1:])
-	fmt.Println("Did doCommand get called?")
 }
