@@ -65,8 +65,9 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports Persistent Flags, which, if defined here,
 	// will be global for your application.
+	fmt.Println("Login: " + login)
 
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.sm-photo-tool.yaml)")
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.smugmugrc)")
 	RootCmd.PersistentFlags().StringVar(&login, "login", "", "smugmug.com username")
 	RootCmd.PersistentFlags().StringVar(&password, "password", "", "smugmug.com password")
 	RootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "Don't tell us what you are doing")
@@ -83,12 +84,13 @@ func initConfig() {
 		viper.SetConfigFile(cfgFile)
 	}
 
-	viper.SetConfigName(".sm-photo-tool") // name of config file (without extension)
-	viper.AddConfigPath("$HOME")          // adding home directory as first search path
-	viper.AutomaticEnv()                  // read in environment variables that match
+	viper.SetConfigFile(os.Getenv("HOME") + "/.smugmugrc")
+	viper.SetConfigType("properties")
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
+	fmt.Println(viper.GetString("login"))
+	fmt.Println(viper.ConfigFileUsed())
 }
